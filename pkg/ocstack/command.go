@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
 )
 
 // CliCommand -
@@ -22,6 +23,9 @@ func CliCommand(q string) {
 	case query == "template":
 		// TODO:
 		// - set the template path that will be used by the agentic mode
+	case query == "help":
+		Helper()
+		return
 	default:
 		fmt.Println("Default!")
 		return

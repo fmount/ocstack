@@ -15,7 +15,11 @@ import (
 )
 
 func main() {
+	// Move this part into a tty.header()
+	fmt.Println("----")
 	fmt.Println("Hello, ocstack!")
+	fmt.Println("----")
+	fmt.Println("I :> Run /help to get a list of available commands")
 
 	ctx := context.Background()
 
@@ -41,12 +45,12 @@ func main() {
 			// Trim any whitespace from the input
 			q := strings.TrimSpace(input)
 			ocstack.CliCommand(strings.TrimPrefix(q, "/"))
+			continue
 		}
 
 		// propagate the request to the LLM
 		req := &api.GenerateRequest{
 			Model: llm.DefaultModel,
-			//Prompt: "how many planets are there?",
 			Prompt: input,
 
 			// set streaming to false

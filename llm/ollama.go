@@ -11,13 +11,6 @@ const (
 	DefaultModel = "gemma2:latest"
 )
 
-type OllamaAgent struct {
-	Client  *api.Client
-	Model   string
-	History session.History
-	Tools   []api.Tool
-}
-
 type OllamaClient struct {
 	client api.Client
 }
@@ -48,7 +41,6 @@ func (c *OllamaClient) Generate(
 				Role:    "user",
 				Content: resp.Response,
 			})
-			//history.Text = append(history.Text, resp.Response)
 		}
 		return nil
 	}
