@@ -11,24 +11,41 @@ import (
 	"github.com/fmount/ocstack/llm"
 	"github.com/fmount/ocstack/pkg/ocstack"
 	"github.com/fmount/ocstack/session"
+	"github.com/fmount/ocstack/templates"
 	"github.com/ollama/ollama/api"
 )
 
 func main() {
-	// Move this part into a tty.header()
-	fmt.Println("----")
-	fmt.Println("Hello, ocstack!")
-	fmt.Println("----")
-	fmt.Println("I :> Run /help to get a list of available commands")
+
+	// Validate ocstack input required to access Tools
+	ocstack.ExitOnErrors()
 
 	ctx := context.Background()
-
 	client, err := llm.GetOllamaClient(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	h := session.History{}
+	h := llm.History{}
+	t := []api.Tool{}
+
+	// TODO: Select profile
+	_, err = templates.LoadProfile("default")
+	if err != nil {
+		ocstack.ShowWarn(fmt.Sprintf("%s\n", err))
+	}
+
+	// Create a new session for the current execution before entering the
+	// loop
+	s, _ := session.NewSession(
+		llm.DefaultModel,
+		client,
+		h,
+		t,
+	)
+
+	// pass the loaded profile
+	ocstack.TermHeader("default")
 
 	for {
 		fmt.Printf("Q :> ")
@@ -50,9 +67,8 @@ func main() {
 
 		// propagate the request to the LLM
 		req := &api.GenerateRequest{
-			Model: llm.DefaultModel,
+			Model: s.Model,
 			Prompt: input,
-
 			// set streaming to false
 			Stream: new(bool),
 		}
@@ -62,7 +78,7 @@ func main() {
 			Content: input,
 		})
 		// Read the reply
-		err = client.Generate(ctx, req, &h)
+		err = s.GetClient().Generate(ctx, req, &h)
 		if err != nil {
 			log.Fatal(err)
 		}

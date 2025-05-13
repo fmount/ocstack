@@ -13,10 +13,38 @@ var Gray = "\033[37m"
 var White = "\033[97m"
 
 // Helper - TODO: we might want to load it with the list of registered commands
-func Helper() {
-	fmt.Println("----")
-	fmt.Println("Available Commands :> ")
-	fmt.Println("1. /quit ")
-	fmt.Println("2. /template ")
-	fmt.Println("----")
+func TermHelper(cmd string) {
+	if cmd == "" {
+		fmt.Println("----")
+		fmt.Println("Available Commands :> ")
+		fmt.Println("1. /quit ")
+		fmt.Println("2. /template ")
+		fmt.Println("----")
+	} else {
+		fmt.Println("----")
+		help(cmd)
+	}
 }
+
+func TermHeader(profile string) {
+	fmt.Println("----")
+	fmt.Println("Hello, ocstack!")
+	fmt.Printf("Agent profile: %s\n", profile)
+	fmt.Println("----")
+	fmt.Println("I :> Run /help to get a list of available commands")
+}
+
+func ShowWarn(s string) {
+	fmt.Printf("%s%s%s\n", Red, s, Reset)
+}
+
+func help(cmd string) {
+	switch {
+	case cmd == "template":
+		fmt.Println("Usage: /template <profile>")
+		// TODO: Print available profiles
+		break;
+	default:
+	}
+}
+

@@ -3,7 +3,6 @@ package llm
 import (
 	"context"
 	"fmt"
-	"github.com/fmount/ocstack/session"
 	"github.com/ollama/ollama/api"
 )
 
@@ -13,6 +12,10 @@ const (
 
 type OllamaClient struct {
 	client api.Client
+}
+
+type History struct {
+	Text []api.Message
 }
 
 func GetOllamaClient(ctx context.Context) (*OllamaClient, error) {
@@ -29,7 +32,7 @@ func GetOllamaClient(ctx context.Context) (*OllamaClient, error) {
 func (c *OllamaClient) Generate(
 	ctx context.Context,
 	req *api.GenerateRequest,
-	history *session.History,
+	history *History,
 ) error {
 
 	respFunc := func(resp api.GenerateResponse) error {

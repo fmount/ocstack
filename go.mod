@@ -11,3 +11,6 @@ replace github.com/fmount/ocstack/gollm => ./gollm
 
 // Replace session module as we work with a single repo
 replace github.com/fmount/ocstack/session => ./session
+
+// Replace templates module as we work with a single repo
+replace github.com/fmount/ocstack/templates => ./templates
