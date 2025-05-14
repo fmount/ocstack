@@ -20,4 +20,3 @@ run_llm() {
 }
 
 ollama_unit "start"
-run_llm "$MODEL"

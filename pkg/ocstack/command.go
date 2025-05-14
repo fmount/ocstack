@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	t "github.com/fmount/ocstack/templates"
+	t "github.com/fmount/ocstack/template"
+	"github.com/fmount/ocstack/llm"
 )
 
 // CliCommand -
-func CliCommand(q string) {
+func CliCommand(q string, s *llm.Session) {
 	query := strings.ToLower(q)
 	tokens := strings.Split(query, " ")
 	tq := tokens[0]
@@ -29,12 +30,19 @@ func CliCommand(q string) {
 			TermHelper(tq)
 			return
 		}
-		_, err := t.LoadProfile(tokens[1])
+		// no session, return
+		if s == nil {
+			ShowWarn(fmt.Sprintf("No session"))
+			return
+		}
+		profile, err := t.LoadProfile(tokens[1])
 		if err != nil {
 			ShowWarn(fmt.Sprintf("%s\n", err))
+			return
 		}
-		TermHeader("default")
-		// TODO: call llm.api to set the new context
+		TermHeader(tokens[1])
+		s.Profile = profile
+		s.SetContext()
 	case tq == "help":
 		TermHelper("")
 		return

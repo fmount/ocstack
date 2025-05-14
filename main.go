@@ -10,8 +10,7 @@ import (
 
 	"github.com/fmount/ocstack/llm"
 	"github.com/fmount/ocstack/pkg/ocstack"
-	"github.com/fmount/ocstack/session"
-	"github.com/fmount/ocstack/templates"
+	"github.com/fmount/ocstack/template"
 	"github.com/ollama/ollama/api"
 )
 
@@ -28,18 +27,19 @@ func main() {
 
 	h := llm.History{}
 	t := []api.Tool{}
+	p := &llm.Provider{}
 
-	// TODO: Select profile
-	_, err = templates.LoadProfile("default")
+	profile, err := templates.LoadProfile("default")
 	if err != nil {
 		ocstack.ShowWarn(fmt.Sprintf("%s\n", err))
 	}
 
 	// Create a new session for the current execution before entering the
 	// loop
-	s, _ := session.NewSession(
+	s, _ := llm.NewSession(
 		llm.DefaultModel,
-		client,
+		p,
+		profile,
 		h,
 		t,
 	)
@@ -61,31 +61,23 @@ func main() {
 		if len(input) > 0 && strings.HasPrefix(input, "/") {
 			// Trim any whitespace from the input
 			q := strings.TrimSpace(input)
-			ocstack.CliCommand(strings.TrimPrefix(q, "/"))
+			ocstack.CliCommand(strings.TrimPrefix(q, "/"), s)
 			continue
 		}
 
 		// propagate the request to the LLM
-		req := &api.GenerateRequest{
-			Model: s.Model,
-			Prompt: input,
-			// set streaming to false
-			Stream: new(bool),
-		}
-		// save the question in the history
-		h.Text = append(h.Text, api.Message{
-			Role:    "user",
-			Content: input,
-		})
-		// Read the reply
-		err = s.GetClient().Generate(ctx, req, &h)
-		if err != nil {
-			log.Fatal(err)
-		}
+		err = client.GenerateChat(
+			ctx,
+			input,
+			s,
+		)
 
-		//log.Println("[DEBUG] - HISTORY")
-		//log.Println(h.Text)
-
+		/*
+		fmt.Println("------------------")
+		log.Println("[DEBUG] - HISTORY")
+		log.Println(s.GetHistory().Text)
+		fmt.Println("------------------")
 		fmt.Println("---")
+		*/
 	}
 }

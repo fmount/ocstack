@@ -17,10 +17,10 @@ type AgentParams struct {
 
 // LoadProfile -
 func LoadProfile(templateName string) (string, error) {
-	// Parse all templates at once
+	// Parse all templates under template/resources at once
     tmpl, err := template.ParseFS(templateFS, "resources/*.tmpl")
     if err != nil {
-        return "", fmt.Errorf("error parsing templates: %w", err)
+        return "", fmt.Errorf("Malformed template: %w", err)
     }
 	a := AgentParams{true}
 	var tpl bytes.Buffer
