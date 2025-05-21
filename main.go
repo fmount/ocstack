@@ -10,9 +10,52 @@ import (
 
 	"github.com/fmount/ocstack/llm"
 	"github.com/fmount/ocstack/pkg/ocstack"
-	"github.com/fmount/ocstack/template"
-	"github.com/ollama/ollama/api"
+	t "github.com/fmount/ocstack/template"
 )
+
+// CliCommand -
+func CliCommand(q string, s *llm.Session) {
+	query := strings.ToLower(q)
+	tokens := strings.Split(query, " ")
+	tq := tokens[0]
+	// tokenize and get the first item. Next items are passed as parameters to
+	// the selected case
+	switch {
+	case tq == "exit" || tq == "quit":
+		fmt.Println("Bye!")
+		// TODO: dump sessions if any
+		os.Exit(0)
+	case tq == "read":
+		fmt.Println("TODO: Read input from workspace path")
+		// TODO:
+		// - workspace is a path where we have assets that can be used as input
+		// - workspace path can be set via an ENV variable
+	case tq == "template":
+		if len(tokens) < 2 {
+			ocstack.TermHelper(tq)
+			return
+		}
+		// no session, return
+		if s == nil {
+			ocstack.ShowWarn(fmt.Sprintf("No session"))
+			return
+		}
+		profile, err := t.LoadProfile(tokens[1])
+		if err != nil {
+			ocstack.ShowWarn(fmt.Sprintf("%s\n", err))
+			return
+		}
+		ocstack.TermHeader(tokens[1])
+		s.Profile = profile
+		s.SetContext()
+	case tq == "help":
+		ocstack.TermHelper("")
+		return
+	default:
+		fmt.Println("Default!")
+		return
+	}
+}
 
 func main() {
 
@@ -20,16 +63,19 @@ func main() {
 	ocstack.ExitOnErrors()
 
 	ctx := context.Background()
-	client, err := llm.GetOllamaClient(ctx)
+
+	client, err := llm.GetProvider(llm.OLLAMAPROVIDER)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	h := llm.History{}
-	t := []api.Tool{}
-	p := &llm.Provider{}
+	b, err := ocstack.RegisterTools()
+	if err != nil {
+		panic(err)
+	}
 
-	profile, err := templates.LoadProfile("default")
+	profile, err := t.LoadProfile("default")
 	if err != nil {
 		ocstack.ShowWarn(fmt.Sprintf("%s\n", err))
 	}
@@ -37,11 +83,10 @@ func main() {
 	// Create a new session for the current execution before entering the
 	// loop
 	s, _ := llm.NewSession(
-		llm.DefaultModel,
-		p,
+		llm.QWEN,
 		profile,
 		h,
-		t,
+		b,
 	)
 
 	// pass the loaded profile
@@ -61,7 +106,7 @@ func main() {
 		if len(input) > 0 && strings.HasPrefix(input, "/") {
 			// Trim any whitespace from the input
 			q := strings.TrimSpace(input)
-			ocstack.CliCommand(strings.TrimPrefix(q, "/"), s)
+			CliCommand(strings.TrimPrefix(q, "/"), s)
 			continue
 		}
 
@@ -71,13 +116,5 @@ func main() {
 			input,
 			s,
 		)
-
-		/*
-		fmt.Println("------------------")
-		log.Println("[DEBUG] - HISTORY")
-		log.Println(s.GetHistory().Text)
-		fmt.Println("------------------")
-		fmt.Println("---")
-		*/
 	}
 }

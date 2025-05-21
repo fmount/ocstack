@@ -43,8 +43,7 @@ func help(cmd string) {
 	case cmd == "template":
 		fmt.Println("Usage: /template <profile>")
 		// TODO: Print available profiles
-		break;
+		break
 	default:
 	}
 }
-

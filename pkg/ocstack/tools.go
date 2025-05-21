@@ -1,21 +1,13 @@
 package ocstack
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
-
-	"github.com/ollama/ollama/api"
+	"os/exec"
+	"strings"
 )
-
-type Tools struct {
-	Tools []api.Tool
-}
-
-// TODO Read KUBECONFIG to setup a k8s client
-// k8s will be used to rsh to the openstackclient Pod that is used to
-// interact with openstack
-// Note: this information has to be part of the template that we load
-// as context for the LLM
 
 // GetKubeConfig -
 func GetKubeConfig() (string, error) {
@@ -43,4 +35,91 @@ func ExitOnErrors() {
 	if len(errors) > 0 {
 		os.Exit(1)
 	}
+}
+
+// GetTools -
+func RegisterTools() ([]byte, error) {
+	// Define the hello tool
+	/*helloTool := map[string]any{
+		"type": "function",
+		"function": map[string]any{
+			"name":		   "hello",
+			"description": "Say hello to a given person with his name",
+			"parameters": map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"name": map[string]any{
+						"type":		   "string",
+						"description": "The name of the person",
+					},
+				},
+				"required": []string{"name"},
+			},
+		},
+	}*/
+	ocTool := map[string]any{
+		"type": "function",
+		"function": map[string]any{
+			"name":        "oc",
+			"description": "Runs the openshift client (oc) to interact with an openshift environment",
+			/*"parameters": map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"namespace": map[string]any{
+						"type":		   "string",
+						"description": "The namespace where you want to execute your query",
+					},
+				},
+				"required": []string{"name"},
+			},*/
+		},
+	}
+	jt, err := json.Marshal([]any{ocTool})
+	if err != nil {
+		return nil, err
+	}
+	return jt, nil
+}
+
+// ToolResult -
+type ToolResult struct {
+	Stdout   string `json:"stdout,omitempty"`
+	Stderr   string `json:"stderr,omitempty"`
+	ExitCode int    `json:"exitcode,omitempty"`
+}
+
+// ToString -
+func (t *ToolResult) ToString() string {
+	return fmt.Sprintf("out: %s\nerr: %s\n", t.Stdout, t.Stderr)
+}
+
+// ExecTool executes a command with arguments and returns the result
+func ExecTool(c string, args string) (ToolResult, error) {
+	// Split the args string into separate arguments
+	argSlice := strings.Fields(args)
+
+	cmd := exec.Command(c, argSlice...)
+
+	// Define stdout and stderr buffers to collect the execution result
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+
+	t := ToolResult{}
+	err := cmd.Run()
+	if err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok {
+			t.ExitCode = exitError.ExitCode()
+		}
+		t.Stdout = stdout.String()
+		t.Stderr = stderr.String()
+		return t, fmt.Errorf("command failed with error: %s", err)
+	}
+
+	t.Stdout = stdout.String()
+	t.Stderr = stderr.String()
+	fmt.Println(stdout.String())
+	t.ExitCode = 0
+	return t, nil
 }
