@@ -2,8 +2,8 @@ package tools
 
 import (
 	"fmt"
-	"os"
 	"github.com/fmount/ocstack/pkg/ocstack"
+	"os"
 )
 
 // GetKubeConfig -
@@ -45,5 +45,3 @@ func OC(f *FunctionCall) string {
 	res, _ := ExecTool(f.Name, args)
 	return res.ToString()
 }
-
-

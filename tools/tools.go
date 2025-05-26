@@ -92,13 +92,13 @@ func RegisterTools() ([]byte, error) {
 	helloTool := map[string]any{
 		"type": "function",
 		"function": map[string]any{
-			"name":		   "hello",
+			"name":        "hello",
 			"description": "Say hello to a given person with his name",
 			"parameters": map[string]any{
 				"type": "object",
 				"properties": map[string]any{
 					"name": map[string]any{
-						"type":		   "string",
+						"type":        "string",
 						"description": "The name of the person",
 					},
 				},

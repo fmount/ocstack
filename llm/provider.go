@@ -88,7 +88,7 @@ func NewSession(model string, tmpl string, h History, t []byte, d bool) (*Sessio
 		Model:   model,
 		History: h,
 		Tools:   t,
-		Debug: d,
+		Debug:   d,
 	}, nil
 }
 

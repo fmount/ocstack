@@ -10,8 +10,8 @@ import (
 
 	"github.com/fmount/ocstack/llm"
 	"github.com/fmount/ocstack/pkg/ocstack"
-	tools "github.com/fmount/ocstack/tools"
 	t "github.com/fmount/ocstack/template"
+	tools "github.com/fmount/ocstack/tools"
 )
 
 // CliCommand -
@@ -84,7 +84,7 @@ func main() {
 	// Create a new session for the current execution before entering the
 	// loop
 	s, _ := llm.NewSession(
-		llm.QWEN,
+		llm.QWEN3,
 		profile,
 		h,
 		b,

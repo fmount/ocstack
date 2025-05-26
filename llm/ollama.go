@@ -4,15 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/ollama/ollama/api"
 	tools "github.com/fmount/ocstack/tools"
-	//"os"
+	"github.com/ollama/ollama/api"
 )
 
 const (
 	DefaultModel = "gemma2:latest"
 	LLAMA        = "llama3"
 	QWEN         = "qwen2.5:1.5b"
+	QWEN3        = "qwen3:latest"
 )
 
 type OllamaProvider struct {
@@ -138,7 +138,6 @@ func (c *OllamaProvider) GenerateChat(
 			if f.Name == "oc" {
 				result = tools.OC(f)
 				f.Result = result
-				//os.Exit(0)
 			}
 
 			if s.Debug {
