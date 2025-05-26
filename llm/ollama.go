@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ollama/ollama/api"
+	tools "github.com/fmount/ocstack/tools"
+	//"os"
 )
 
 const (
@@ -121,41 +123,35 @@ func (c *OllamaProvider) GenerateChat(
 			if err != nil {
 				return fmt.Errorf("Error marshaling args")
 			}
-			f, err := ToFunctionCall(tool.Function.Name, toolArgs)
+			f, err := tools.ToFunctionCall(tool.Function.Name, toolArgs)
 			if err != nil {
-				return fmt.Errorf(fmt.Sprintf("%v", err))
+				return fmt.Errorf("%v", err)
 			}
 
-			//fmt.Printf("[DEBUG] |-> FunctionCall:\n")
-			//fmt.Printf("[DEBUG] |-->> %s\n", f.Name)
-			//fmt.Printf("[DEBUG] |-->> %v\n", f.Arguments)
-
-			// We do not need this if we're not in debug mode, but let's keep
-			// printing the output of the function call
-			/*if f.Name == "hello" {
-				fmt.Printf("[DEBUG] | -->> %v\n", hello(f.Arguments))
-			}*/
 			var result string
-			if f.Name == "oc" {
-				result = oc(f)
+
+			if f.Name == "hello" {
+				result = tools.Hello(f.Arguments)
 				f.Result = result
-				fmt.Printf("[DEBUG] | -->> %v\n", result)
 			}
 
-			msg := api.Message{
-				Role:    "user",
-				Content: fmt.Sprintf("Function output is %v\n", result),
+			if f.Name == "oc" {
+				result = tools.OC(f)
+				f.Result = result
+				//os.Exit(0)
 			}
-			s.UpdateHistory(msg)
+
+			if s.Debug {
+				fmt.Printf("[DEBUG] |-> FunctionCall:\n")
+				fmt.Printf("[DEBUG] |-->> %s\n", f.Name)
+				fmt.Printf("[DEBUG] |-->> %v\n", f.Arguments)
+				fmt.Printf("[DEBUG] | -->> %v\n", f.Result)
+			}
 			// Process the data we just got by doing a recursive call to the
 			// GenerateChat function.
-			// TODO: For the future, to avoid an infinite loop, we might want
-			// to limit this execution and keep track of the number of times
-			// this gets executed.
-			outPrompt := fmt.Sprintf("Parse the output received from the function %s called in the previous message with arguments %v\n", f.Name, f.Arguments)
-			outPrompt, err = RenderExec(f)
+			outPrompt, err := tools.RenderExec(f)
 			if err != nil {
-				return fmt.Errorf(fmt.Sprintf("%v", err))
+				return fmt.Errorf("%v", err)
 			}
 			c.GenerateChat(ctx, outPrompt, s)
 		}

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
-	"github.com/fmount/ocstack/llm"
+	t "github.com/fmount/ocstack/tools"
 	"text/template"
 )
 
@@ -37,7 +37,7 @@ func LoadProfile(templateName string) (string, error) {
 }
 
 // RenderExec -
-func RenderExec(f llm.FunctionCall) (string, error) {
+func RenderExec(f t.FunctionCall) (string, error) {
 	tmpl, err := template.ParseFiles("resources/execResult.tmpl")
 	if err != nil {
 		return "", fmt.Errorf("Error parsing template file: %v", err)

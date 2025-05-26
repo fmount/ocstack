@@ -1,13 +1,7 @@
 package llm
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
-	"text/template"
-
-	"github.com/fmount/ocstack/pkg/ocstack"
 	"github.com/ollama/ollama/api"
 )
 
@@ -45,6 +39,7 @@ type Session struct {
 	Model   string
 	History History
 	Tools   []byte
+	Debug   bool
 }
 
 type History struct {
@@ -85,7 +80,7 @@ func (s *Session) SetContext() {
 	})
 }
 
-func NewSession(model string, tmpl string, h History, t []byte) (*Session, error) {
+func NewSession(model string, tmpl string, h History, t []byte, d bool) (*Session, error) {
 	// we might need some validation and err returning here. Right now this
 	// is just a wrapper
 	return &Session{
@@ -93,6 +88,7 @@ func NewSession(model string, tmpl string, h History, t []byte) (*Session, error
 		Model:   model,
 		History: h,
 		Tools:   t,
+		Debug: d,
 	}, nil
 }
 
@@ -104,82 +100,4 @@ func (s *Session) SaveSession() error {
 // LoadSession -
 func (s *Session) LoadSession() (error, ss *Session) {
 	return &Session{}, nil
-}
-
-type Tool struct {
-	Type     string    `json:"type"`
-	Function *Function `json:"function"`
-}
-
-type FunctionCall struct {
-	Name      string         `json:"name"`
-	Arguments map[string]any `json:"arguments"`
-	Result    string         `json:"result"`
-}
-
-type Properties struct {
-	Type        string   `json:"type,omitempty"`
-	Description string   `json:"description,omitempty"`
-	Enum        []string `json:"enum,omitempty"`
-}
-
-type Parameters struct {
-	Type       string                 `json:"type,omitempty"`
-	Required   []string               `json:"required,omitempty"`
-	Properties map[string]*Properties `json:"properties,omitempty"`
-}
-
-type Function struct {
-	Name        string      `json:"name,omitempty"`
-	Description string      `json:"description,omitempty"`
-	Parameters  *Parameters `json:"parameters,omitempty"`
-}
-
-// ToFunctionArgs -
-func ToFunctionArgs(b []byte) (map[string]any, error) {
-	m := make(map[string]any)
-	err := json.Unmarshal(b, &m)
-	if err != nil {
-		return nil, fmt.Errorf("Can't unmarshal data")
-	}
-	return m, nil
-}
-
-func ToFunctionCall(name string, b []byte) (*FunctionCall, error) {
-	var err error
-	var args map[string]any
-	if args, err = ToFunctionArgs(b); err != nil {
-		return nil, err
-	}
-	f := &FunctionCall{
-		Name:      name,
-		Arguments: args,
-	}
-	return f, nil
-}
-
-func RenderExec(f *FunctionCall) (string, error) {
-	tmpl, err := template.ParseFiles("template/resources/execResult.tmpl")
-	if err != nil {
-		return "", fmt.Errorf("Error parsing template file: %v", err)
-	}
-	var buf bytes.Buffer
-	// Execute the template with the data and write the output to stdout
-	err = tmpl.Execute(&buf, f)
-	if err != nil {
-		return "", fmt.Errorf("Error executing template: %v", err)
-	}
-	return buf.String(), nil
-}
-
-/**
- * Function definition
-**/
-func hello(args map[string]any) string {
-	return fmt.Sprintf("Hello %s\n", args["name"])
-}
-
-func oc(f *FunctionCall) string {
-	res, _ := ocstack.ExecTool(f.Name, "get nodes --show-labels")
-	return res.ToString()
 }

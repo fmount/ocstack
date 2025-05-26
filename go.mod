@@ -11,3 +11,6 @@ replace github.com/fmount/ocstack/gollm => ./gollm
 
 // Replace templates module as we work with a single repo
 replace github.com/fmount/ocstack/template => ./template
+
+// Replace tools module as we work with a single repo
+replace github.com/fmount/ocstack/tools => ./tools

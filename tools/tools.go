@@ -1,46 +1,95 @@
-package ocstack
+package tools
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"os"
 	"os/exec"
 	"strings"
+	"text/template"
 )
 
-// GetKubeConfig -
-func GetKubeConfig() (string, error) {
-	path := os.Getenv("KUBECONFIG")
-	if path == "" {
-		return "", fmt.Errorf("KUBECONFIG env var is not set")
-	}
-	return path, nil
+type Tool struct {
+	Type     string    `json:"type"`
+	Function *Function `json:"function"`
 }
 
-// ValidateTools -
-func ValidateTools() []error {
-	var allErrs []error
-	// Try to resolve KubeConfig
-	if _, err := GetKubeConfig(); err != nil {
-		ShowWarn(fmt.Sprintf("[WARN]: %v\n", err))
-		allErrs = append(allErrs, err)
-	}
-	return allErrs
+type FunctionCall struct {
+	Name      string         `json:"name"`
+	Arguments map[string]any `json:"arguments"`
+	Result    string         `json:"result"`
 }
 
-// ExitOnErrors -
-func ExitOnErrors() {
-	errors := ValidateTools()
-	if len(errors) > 0 {
-		os.Exit(1)
+type Properties struct {
+	Type        string   `json:"type,omitempty"`
+	Description string   `json:"description,omitempty"`
+	Enum        []string `json:"enum,omitempty"`
+}
+
+type Parameters struct {
+	Type       string                 `json:"type,omitempty"`
+	Required   []string               `json:"required,omitempty"`
+	Properties map[string]*Properties `json:"properties,omitempty"`
+}
+
+type Function struct {
+	Name        string      `json:"name,omitempty"`
+	Description string      `json:"description,omitempty"`
+	Parameters  *Parameters `json:"parameters,omitempty"`
+}
+
+// ToFunctionArgs -
+func ToFunctionArgs(b []byte) (map[string]any, error) {
+	m := make(map[string]any)
+	err := json.Unmarshal(b, &m)
+	if err != nil {
+		return nil, fmt.Errorf("Can't unmarshal data")
 	}
+	return m, nil
+}
+
+func ToFunctionCall(name string, b []byte) (*FunctionCall, error) {
+	var err error
+	var args map[string]any
+	if args, err = ToFunctionArgs(b); err != nil {
+		return nil, err
+	}
+	f := &FunctionCall{
+		Name:      name,
+		Arguments: args,
+	}
+	return f, nil
+}
+
+func RenderExec(f *FunctionCall) (string, error) {
+	tmpl, err := template.ParseFiles("template/resources/execResult.tmpl")
+	if err != nil {
+		return "", fmt.Errorf("Error parsing template file: %v", err)
+	}
+	var buf bytes.Buffer
+	// Execute the template with the data and write the output to stdout
+	err = tmpl.Execute(&buf, f)
+	if err != nil {
+		return "", fmt.Errorf("Error executing template: %v", err)
+	}
+	return buf.String(), nil
+}
+
+func unpackArgs(key string, args map[string]any) string {
+	// only return the value if the key exists and is a .(string)
+	if arg, exists := args[key]; exists {
+		if argStr, ok := arg.(string); ok {
+			return argStr
+		}
+		return ""
+	}
+	return ""
 }
 
 // GetTools -
 func RegisterTools() ([]byte, error) {
 	// Define the hello tool
-	/*helloTool := map[string]any{
+	helloTool := map[string]any{
 		"type": "function",
 		"function": map[string]any{
 			"name":		   "hello",
@@ -56,7 +105,7 @@ func RegisterTools() ([]byte, error) {
 				"required": []string{"name"},
 			},
 		},
-	}*/
+	}
 	ocTool := map[string]any{
 		"type": "function",
 		"function": map[string]any{
@@ -70,11 +119,11 @@ func RegisterTools() ([]byte, error) {
 						"description": "The namespace where you want to execute your query",
 					},
 				},
-				"required": []string{"name"},
+				"optional": []string{"namespace"},
 			},*/
 		},
 	}
-	jt, err := json.Marshal([]any{ocTool})
+	jt, err := json.Marshal([]any{ocTool, helloTool})
 	if err != nil {
 		return nil, err
 	}

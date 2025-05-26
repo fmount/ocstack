@@ -10,6 +10,7 @@ import (
 
 	"github.com/fmount/ocstack/llm"
 	"github.com/fmount/ocstack/pkg/ocstack"
+	tools "github.com/fmount/ocstack/tools"
 	t "github.com/fmount/ocstack/template"
 )
 
@@ -60,7 +61,7 @@ func CliCommand(q string, s *llm.Session) {
 func main() {
 
 	// Validate ocstack input required to access Tools
-	ocstack.ExitOnErrors()
+	tools.ExitOnErrors()
 
 	ctx := context.Background()
 
@@ -70,7 +71,7 @@ func main() {
 	}
 
 	h := llm.History{}
-	b, err := ocstack.RegisterTools()
+	b, err := tools.RegisterTools()
 	if err != nil {
 		panic(err)
 	}
@@ -87,6 +88,7 @@ func main() {
 		profile,
 		h,
 		b,
+		true,
 	)
 
 	// pass the loaded profile
