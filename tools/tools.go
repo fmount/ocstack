@@ -111,19 +111,16 @@ func RegisterTools() ([]byte, error) {
 		"function": map[string]any{
 			"name":        "oc",
 			"description": "Runs the openshift client (oc) to interact with an openshift environment",
-			/*"parameters": map[string]any{
-				"type": "object",
-				"properties": map[string]any{
-					"namespace": map[string]any{
-						"type":		   "string",
-						"description": "The namespace where you want to execute your query",
-					},
-				},
-				"optional": []string{"namespace"},
-			},*/
 		},
 	}
-	jt, err := json.Marshal([]any{ocTool, helloTool})
+	ctlplaneTool := map[string]any{
+		"type": "function",
+		"function": map[string]any{
+			"name":        "get_openstack_control_plane",
+			"description": "Runs the openshift client (oc) to get the openstack control plane status",
+		},
+	}
+	jt, err := json.Marshal([]any{ctlplaneTool, ocTool, helloTool})
 	if err != nil {
 		return nil, err
 	}

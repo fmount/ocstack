@@ -1,1 +1,68 @@
-# Chat with your OpenStack environment
+# ocstack – Your AI Assistant for OpenStack on OpenShift
+
+ocstack is an experimental AI-powered assistant designed to simplify and
+automate common tasks in OpenStack environments running on OpenShift. This tool
+serves as a proof of concept (PoC) to explore the capabilities of local large
+language models (LLMs) through the Ollama framework, using intelligent agents
+to interact with complex cloud-native platforms.
+
+## Why
+
+Managing OpenStack on Kubernetes (specifically OpenShift) often involves a
+steep learning curve, complex CLI interactions, and context switching across
+multiple tools. ocstack leverages LLM-powered agents to:
+
+- Provide conversational interaction with your OpenStack environment
+- Guide users through operational tasks (e.g., deployment checks, status reports)
+- Reduce cognitive load for new users or operators
+- Enable experimentation with local LLMs in secure, air-gapped environments
+
+By integrating LLM agents into your cloud workflows, ocstack demonstrates the
+potential of intelligent automation in infrastructure management—where agents
+can understand context, make suggestions, and execute commands with minimal
+human input.
+
+Unlike traditional scripts or hardcoded automation, agents can:
+
+- Interpret natural language and convert it into actionable commands
+- Adapt to varying environments and scenarios
+- Offer explanations or troubleshooting steps when something goes wrong
+
+In this PoC, agents act as a bridge between human operators and the
+OpenStack/OpenShift ecosystem—empowering users to get help, ask questions, or
+automate repetitive tasks in real-time.
+
+## Chat with your OpenStack environment
+
+Once set up, you can interact with your OpenStack deployment using natural
+language prompts. Ask for node status, deployment logs, or even guidance on
+common workflows—all through a conversational interface.
+
+## Getting started
+
+> Note: This project is in active development and subject to significant changes as new capabilities are tested and added.
+
+### Prerequisites
+
+Install the necessary tools and prepare your OpenShift (CRC) environment:
+
+```bash
+cd ~
+$ git clone https://github.com/openstack-k8s-operators/install_yamls.git
+$ cd install_yamls/devsetup
+$ PULL_SECRET=~/pull-secret CPUS=6 MEMORY=20480 make download_tools crc
+```
+
+Follow the [install_yamls documentation]() to deploy an OpenStack environment
+on OpenShift.
+
+### Run the ocstack assistant
+
+Once the openstack on openshift environment is ready, start the ocstack
+assistant:
+
+```bash
+$ export KUBECONFIG=$HOME/.crc/machines/crc/kubeconfig; make build && make run
+```
+
+> **Note:** You can point to **any OpenShift environment** by updating the `KUBECONFIG` path to your desired cluster configuration.

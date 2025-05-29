@@ -84,7 +84,7 @@ func main() {
 	// Create a new session for the current execution before entering the
 	// loop
 	s, _ := llm.NewSession(
-		llm.QWEN3,
+		llm.QWEN,
 		profile,
 		h,
 		b,
@@ -102,6 +102,11 @@ func main() {
 		input, err := reader.ReadString('\n')
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		// no input provided, go back to the beginning
+		if len(strings.TrimSuffix(input, "\n")) == 0 {
+			continue
 		}
 
 		// process potential commands

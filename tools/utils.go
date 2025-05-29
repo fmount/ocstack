@@ -45,3 +45,9 @@ func OC(f *FunctionCall) string {
 	res, _ := ExecTool(f.Name, args)
 	return res.ToString()
 }
+
+func Ctlplane(f *FunctionCall) string {
+	//args := unpackArgs("command", f.Arguments)
+	res, _ := ExecTool("oc", "-n openstack get oscp")
+	return res.ToString()
+}

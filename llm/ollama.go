@@ -140,6 +140,11 @@ func (c *OllamaProvider) GenerateChat(
 				f.Result = result
 			}
 
+			if f.Name == "get_openstack_control_plane" {
+				result = tools.Ctlplane(f)
+				f.Result = result
+			}
+
 			if s.Debug {
 				fmt.Printf("[DEBUG] |-> FunctionCall:\n")
 				fmt.Printf("[DEBUG] |-->> %s\n", f.Name)
