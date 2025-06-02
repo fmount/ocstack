@@ -66,3 +66,66 @@ $ export KUBECONFIG=$HOME/.crc/machines/crc/kubeconfig; make build && make run
 ```
 
 > **Note:** You can point to **any OpenShift environment** by updating the `KUBECONFIG` path to your desired cluster configuration.
+
+## Working with Local Tools
+
+OCStack currently supports only local tool execution. Support for connecting to
+MCP (Model Context Protocol) endpoints is planned for a future release.
+
+The tool system is designed to be extensible, allowing you to create
+specialized tools for specific tasks. Currently, a basic set of tools is
+provided, but you can easily add custom tools to enhance functionality.
+
+### Adding Custom Tools
+
+To add a new tool, follow these three steps:
+
+#### 1. Define the Tool Schema
+
+Create a JSON definition file in the `tools/local` directory. Use descriptive
+names that reflect the tool's purpose.
+
+**Example:** For OpenStack-specific tools, create `tools/local/openstack.json`:
+
+```json
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "get_endpoint_list",
+      "description": "Get the OpenStack endpoint list",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "namespace": {
+            "type": "string",
+            "description": "The namespace where the OpenStack client is deployed"
+          }
+        },
+        "required": ["namespace"]
+      }
+    }
+  }
+]
+```
+
+> Tool definitions from custom files are automatically merged with the
+default `tools.json`, making them available to the LLM.
+
+#### 2. Implement the Tool Logic
+
+Add your tool's implementation to the `tools/utils.go` module. This is where
+you define the actual functions that will be executed when the LLM calls your
+tool.
+
+#### 3. Register the Tool Handler
+
+Update the `GenerateChat` function to handle calls to your new tool. This
+connects the LLM's tool invocation to your implementation.
+
+### Tool Organization
+
+- **Default tools:** Defined in the base `tools.json` file
+- **Custom tools:** Organized by category in `tools/local/` (e.g., `openstack.json`, `kubernetes.json`)
+- **Implementation:** All tool logic resides in `tools/utils.go`
+- **Integration:** Tool handlers are registered in the `GenerateChat` function

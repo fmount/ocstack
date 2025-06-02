@@ -4,9 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"text/template"
+)
+
+const (
+	LOCAL_TOOLS = "tools/local"
 )
 
 type Tool struct {
@@ -86,45 +92,54 @@ func unpackArgs(key string, args map[string]any) string {
 	return ""
 }
 
-// GetTools -
-func RegisterTools() ([]byte, error) {
-	// Define the hello tool
-	helloTool := map[string]any{
-		"type": "function",
-		"function": map[string]any{
-			"name":        "hello",
-			"description": "Say hello to a given person with his name",
-			"parameters": map[string]any{
-				"type": "object",
-				"properties": map[string]any{
-					"name": map[string]any{
-						"type":        "string",
-						"description": "The name of the person",
-					},
-				},
-				"required": []string{"name"},
-			},
-		},
-	}
-	ocTool := map[string]any{
-		"type": "function",
-		"function": map[string]any{
-			"name":        "oc",
-			"description": "Runs the openshift client (oc) to interact with an openshift environment",
-		},
-	}
-	ctlplaneTool := map[string]any{
-		"type": "function",
-		"function": map[string]any{
-			"name":        "get_openstack_control_plane",
-			"description": "Runs the openshift client (oc) to get the openstack control plane status",
-		},
-	}
-	jt, err := json.Marshal([]any{ctlplaneTool, ocTool, helloTool})
+// RegisterTools - A function that either select local tools or simply
+// discover what is available through and endpoint. Currently local tools
+// only are supported
+func GetRegisteredTools(dirPath string)([]byte, error) {
+
+	var allTools []map[string]any
+	// Read all JSON files from the directory
+	err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip directories and non-JSON files
+		if info.IsDir() || !strings.HasSuffix(strings.ToLower(info.Name()), ".json") {
+			return nil
+		}
+
+		// Read the JSON file
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("failed to read file %s: %w", path, err)
+		}
+
+		// Parse the JSON
+		var tools []map[string]any
+		if err := json.Unmarshal(data, &tools); err != nil {
+			return fmt.Errorf("failed to parse JSON from %s: %w", path, err)
+		}
+
+		// Merge into the main slice
+		allTools = append(allTools, tools...)
+		return nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
-	return jt, nil
+
+	// Marshal the merged tools back to JSON
+	return json.Marshal(allTools)
+}
+
+// RegisterTools - A function that either select local tools or simply
+// discover what is available through and endpoint. Currently local tools
+// only are supported
+func RegisterTools()([]byte, error) {
+	// Read the JSON files from local dir
+	return GetRegisteredTools(LOCAL_TOOLS)
 }
 
 // ToolResult -

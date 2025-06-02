@@ -1,0 +1,9 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "get_openstack_control_plane",
+      "description": "Runs the openshift client (oc) to get the openstack control plane status"
+    }
+  }
+]
