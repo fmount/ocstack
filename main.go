@@ -14,6 +14,10 @@ import (
 	tools "github.com/fmount/ocstack/tools"
 )
 
+const (
+	DEBUG = true // switch to true to print additional information
+)
+
 // CliCommand -
 func CliCommand(q string, s *llm.Session) {
 	query := strings.ToLower(q)
@@ -48,7 +52,7 @@ func CliCommand(q string, s *llm.Session) {
 		}
 		ocstack.TermHeader(tokens[1])
 		s.Profile = profile
-		s.SetContext()
+		s.UpdateContext()
 	case tq == "help":
 		ocstack.TermHelper("")
 		return
@@ -88,7 +92,7 @@ func main() {
 		profile,
 		h,
 		b,
-		true,
+		DEBUG,
 	)
 
 	// pass the loaded profile
@@ -96,7 +100,6 @@ func main() {
 
 	for {
 		fmt.Printf("Q :> ")
-
 		// Read input
 		reader := bufio.NewReader(os.Stdin)
 		input, err := reader.ReadString('\n')
@@ -123,5 +126,10 @@ func main() {
 			input,
 			s,
 		)
+		if s.Debug {
+			fmt.Printf("[HISTORY]:\n")
+			fmt.Println(s.GetHistory())
+			fmt.Printf("----------\n")
+		}
 	}
 }

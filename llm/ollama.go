@@ -84,9 +84,16 @@ func (c *OllamaProvider) GenerateChat(
 		})
 	}
 
-	// Process user input and build a message that can be passed to
-	// a ChatRequest
-	msg := s.GetHistory().Text
+	history := s.GetHistory()
+	var msg []api.Message
+
+	// Convert []interface{} to []api.Message
+	for _, item := range history.Text {
+		if apiMsg, ok := item.(api.Message); ok {
+			msg = append(msg, apiMsg)
+		}
+	}
+
 	msg = append(msg, api.Message{
 		Role:    "user",
 		Content: input,

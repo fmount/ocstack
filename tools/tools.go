@@ -95,7 +95,7 @@ func unpackArgs(key string, args map[string]any) string {
 // RegisterTools - A function that either select local tools or simply
 // discover what is available through and endpoint. Currently local tools
 // only are supported
-func GetRegisteredTools(dirPath string)([]byte, error) {
+func GetRegisteredTools(dirPath string) ([]byte, error) {
 
 	var allTools []map[string]any
 	// Read all JSON files from the directory
@@ -137,7 +137,7 @@ func GetRegisteredTools(dirPath string)([]byte, error) {
 // RegisterTools - A function that either select local tools or simply
 // discover what is available through and endpoint. Currently local tools
 // only are supported
-func RegisterTools()([]byte, error) {
+func RegisterTools() ([]byte, error) {
 	// Read the JSON files from local dir
 	return GetRegisteredTools(LOCAL_TOOLS)
 }

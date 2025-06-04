@@ -2,11 +2,11 @@ package llm
 
 import (
 	"context"
-	"github.com/ollama/ollama/api"
 )
 
 const (
 	OLLAMAPROVIDER = "ollama"
+	LLAMACPP       = "llama"
 )
 
 type Client interface {
@@ -29,6 +29,13 @@ func GetProvider(pID string) (Client, error) {
 			return nil, err
 		}
 		return client, err
+	case LLAMACPP:
+		var p LLamaCppProvider
+		client, err := p.GetLLMClient(context.Background())
+		if err != nil {
+			return nil, err
+		}
+		return client, err
 	default:
 		return nil, nil
 	}
@@ -42,44 +49,34 @@ type Session struct {
 	Debug   bool
 }
 
+// History is a list of messages associated with a given session
 type History struct {
-	Text []api.Message
+	Text []interface{}
 }
 
+// GetHistory -
 func (s *Session) GetHistory() History {
 	return s.History
 }
 
+// SetHistory -
 func (s *Session) SetHistory(h History) {
 	s.History = h
 }
 
+// GetProfile -
 func (s *Session) GetProfile() string {
 	return s.Profile
 }
 
-func (s *Session) NewMessage(input string) []api.Message {
-	msg := s.GetHistory().Text
-	msg = append(msg, api.Message{
-		Role:    "user",
-		Content: input,
-	})
-	return msg
-}
-
-func (s *Session) UpdateHistory(m api.Message) {
+// UpdateHistory -
+func (s *Session) UpdateHistory(m any) {
 	h := s.GetHistory().Text
 	h = append(h, m)
 	s.SetHistory(History{h})
 }
 
-func (s *Session) SetContext() {
-	s.UpdateHistory(api.Message{
-		Role:    "system",
-		Content: s.Profile,
-	})
-}
-
+// NewSession -
 func NewSession(model string, tmpl string, h History, t []byte, d bool) (*Session, error) {
 	// we might need some validation and err returning here. Right now this
 	// is just a wrapper
@@ -100,4 +97,9 @@ func (s *Session) SaveSession() error {
 // LoadSession -
 func (s *Session) LoadSession() (error, ss *Session) {
 	return &Session{}, nil
+}
+
+// UpdateContext -
+func (s *Session) UpdateContext() {
+	s.UpdateHistory(s.Profile)
 }
