@@ -21,6 +21,7 @@ type LLamaCppProvider struct {
 	client   http.Client
 }
 
+// LLamaMessage represents the message content
 type LLamaMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
@@ -36,6 +37,44 @@ type LLamaPayload struct {
 	Stream   bool           `json:"stream"`
 	//History History
 	Tools []byte `json:"tools"`
+}
+
+// ChatCompletion represents the main response structure
+type LLamaChatCompletion struct {
+	ID                string        `json:"id"`
+	Object            string        `json:"object"`
+	Created           int64         `json:"created"`
+	Model             string        `json:"model"`
+	SystemFingerprint string        `json:"system_fingerprint"`
+	Choices           []LLamaChoice `json:"choices"`
+	Usage             LLamaUsage    `json:"usage"`
+	Timings           LLamaTimings  `json:"timings"`
+}
+
+// LLamaChoice represents each choice in the response
+type LLamaChoice struct {
+	Index        int          `json:"index"`
+	Message      LLamaMessage `json:"message"`
+	FinishReason string       `json:"finish_reason"`
+}
+
+// LLamaUsage represents token usage statistics
+type LLamaUsage struct {
+	PromptTokens     int `json:"prompt_tokens"`
+	CompletionTokens int `json:"completion_tokens"`
+	TotalTokens      int `json:"total_tokens"`
+}
+
+// LLamaTimings represents performance metrics
+type LLamaTimings struct {
+	PromptN             int     `json:"prompt_n"`
+	PromptMs            float64 `json:"prompt_ms"`
+	PromptPerTokenMs    float64 `json:"prompt_per_token_ms"`
+	PromptPerSecond     float64 `json:"prompt_per_second"`
+	PredictedN          int     `json:"predicted_n"`
+	PredictedMs         float64 `json:"predicted_ms"`
+	PredictedPerTokenMs float64 `json:"predicted_per_token_ms"`
+	PredictedPerSecond  float64 `json:"predicted_per_second"`
 }
 
 func (l *LLamaCppProvider) toString() string {
@@ -79,19 +118,29 @@ func (c *LLamaCppProvider) GenerateChat(
 	s *Session,
 ) error {
 	if s.Debug {
-		fmt.Printf("Scheme: %s\n", c.llamaURL.Scheme)
-		fmt.Printf("Host: %s\n", c.llamaURL.Host)
-		fmt.Printf("Path: %s\n", c.llamaURL.Path)
+		fmt.Printf("[DEBUG] - Scheme: %s\n", c.llamaURL.Scheme)
+		fmt.Printf("[DEBUG] - Host: %s\n", c.llamaURL.Host)
+		fmt.Printf("[DEBUG] - Path: %s\n", c.llamaURL.Path)
 	}
 
-	msg := LLamaMessage{
+	h := s.GetHistory()
+	var msgs []LLamaMessage
+
+	// Convert []interface{} to []LLamaMessage
+	for _, item := range h.Text {
+		if msg, ok := item.Text.(LLamaMessage); ok {
+			msgs = append(msgs, msg)
+		}
+	}
+
+	msgs = append(msgs, LLamaMessage{
 		Role:    "user",
 		Content: input,
-	}
-	// TODO: append it to the history
+	})
+
 	l := LLamaPayload{
 		Model:    s.Model,
-		Messages: []LLamaMessage{msg},
+		Messages: msgs,
 		Stream:   false,
 		Tools:    nil,
 	}
@@ -101,8 +150,30 @@ func (c *LLamaCppProvider) GenerateChat(
 	if resp, err = c.Request(ctx, l, s); err != nil {
 		return err
 	}
+
+	// Parse the resulting JSON
+	var completion LLamaChatCompletion
+	err = json.Unmarshal([]byte(resp), &completion)
+	if err != nil {
+		return err
+	}
 	fmt.Printf("A :> ")
-	fmt.Printf("%s\n", resp)
+	// Print response only if there's at least one available
+	// choice
+	if len(completion.Choices) > 0 {
+		var result string
+		result = completion.Choices[0].Message.Content
+		fmt.Printf("%s\n", result)
+		s.UpdateHistory(Message{
+			Role: "assistant",
+			Text: result,
+		})
+	}
+
+	// TODO:
+	// - Function Call if a tool is detected
+	// - Render response using the golang template
+
 	return nil
 }
 
@@ -136,10 +207,5 @@ func (c *LLamaCppProvider) Request(
 	if res.StatusCode != 200 {
 		return nil, fmt.Errorf("unexpected status %d\n", res.StatusCode)
 	}
-	// TODO:
-	// - Update history
-	// - Function Call if a tool is detected
-	// - Render response
-	// - return
 	return resBody, nil
 }

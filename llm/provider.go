@@ -49,9 +49,14 @@ type Session struct {
 	Debug   bool
 }
 
+type Message struct {
+	Role string
+	Text interface{}
+}
+
 // History is a list of messages associated with a given session
 type History struct {
-	Text []interface{}
+	Text []Message
 }
 
 // GetHistory -
@@ -70,7 +75,7 @@ func (s *Session) GetProfile() string {
 }
 
 // UpdateHistory -
-func (s *Session) UpdateHistory(m any) {
+func (s *Session) UpdateHistory(m Message) {
 	h := s.GetHistory().Text
 	h = append(h, m)
 	s.SetHistory(History{h})
@@ -101,5 +106,8 @@ func (s *Session) LoadSession() (error, ss *Session) {
 
 // UpdateContext -
 func (s *Session) UpdateContext() {
-	s.UpdateHistory(s.Profile)
+	s.UpdateHistory(Message{
+		Role: "system",
+		Text: s.Profile,
+	})
 }

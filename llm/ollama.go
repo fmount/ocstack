@@ -58,9 +58,9 @@ func (c *OllamaProvider) Generate(
 		// interesting fields you want to examine.
 		fmt.Println(resp.Response)
 		if history != nil {
-			history.Text = append(history.Text, api.Message{
-				Role:    "user",
-				Content: resp.Response,
+			history.Text = append(history.Text, Message{
+				Role: "user",
+				Text: resp.Response,
 			})
 		}
 		return nil
@@ -78,10 +78,7 @@ func (c *OllamaProvider) GenerateChat(
 	// If it's the first message, let's set some context in the history
 	// to drive the reasoning
 	if len(s.GetHistory().Text) == 0 {
-		s.UpdateHistory(api.Message{
-			Role:    "system",
-			Content: s.Profile,
-		})
+		s.UpdateContext()
 	}
 
 	history := s.GetHistory()
@@ -89,7 +86,7 @@ func (c *OllamaProvider) GenerateChat(
 
 	// Convert []interface{} to []api.Message
 	for _, item := range history.Text {
-		if apiMsg, ok := item.(api.Message); ok {
+		if apiMsg, ok := item.Text.(api.Message); ok {
 			msg = append(msg, apiMsg)
 		}
 	}
@@ -118,11 +115,10 @@ func (c *OllamaProvider) GenerateChat(
 		fmt.Printf("T :> ")
 		fmt.Println(resp.Message.ToolCalls)
 		// Check if content is empty (e.g. it returned a ToolCall)
-		msg := api.Message{
-			Role:    "user",
-			Content: resp.Message.Content,
-		}
-		s.UpdateHistory(msg)
+		s.UpdateHistory(Message{
+			Role: "user",
+			Text: resp.Message.Content,
+		})
 
 		for _, tool := range resp.Message.ToolCalls {
 			// Build function Call
