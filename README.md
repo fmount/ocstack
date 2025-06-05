@@ -129,3 +129,55 @@ connects the LLM's tool invocation to your implementation.
 - **Custom tools:** Organized by category in `tools/local/` (e.g., `openstack.json`, `kubernetes.json`)
 - **Implementation:** All tool logic resides in `tools/utils.go`
 - **Integration:** Tool handlers are registered in the `GenerateChat` function
+
+
+## Ramalama Support (LLama.cpp via HTTP)
+
+**ocstack** includes basic support for models served via
+[ramalama.ai](https://ramalama.ai/) which provides a local runtime for LLMs
+using LLama.cpp-compatible APIs. This allows the assistant to run fully offline
+and self-hosted, which is ideal for development or to conduct experiments.
+
+> **Note:** While chat interaction works, **function/tool calling is not yet
+> supported** with the `LLAMACPP` provider in ocstack.
+
+### How to Use ocstack with Ramalama
+
+#### **Start Ramalama**
+
+Install and start a model using the istructions provided by
+[ramalama.ai](https://ramalama.ai/):
+
+```bash
+ramalama serve llama3
+```
+
+This will expose an API compatible with OpenAI's `v1/chat/completions`,
+typically on `http://localhost:8080`.
+
+#### **Export the LLM Endpoint**
+
+Set the environment variable so `ocstack` can locate your local ramalama
+server:
+
+```bash
+export LLAMA_HOST=http://localhost:8080
+```
+
+#### **Switch the LLM Provider to LLAMACPP**
+
+In your `main.go`, update the provider selection to use `LLAMACPP`:
+
+```diff
+- client, err := llm.GetProvider(llm.OLLAMAPROVIDER)
++ client, err := llm.GetProvider(llm.LLAMACPP)
+```
+
+> **Note:** This is still required because there's no cli yet as this is a
+> very simple POC
+
+#### 4. **Build and Run**
+
+```bash
+$ export KUBECONFIG=$HOME/.crc/machines/crc/kubeconfig; make build && make run
+```
