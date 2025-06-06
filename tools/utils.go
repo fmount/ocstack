@@ -63,3 +63,10 @@ func Ctlplane(f *FunctionCall) string {
 	res, _ := ExecTool("oc", "-n openstack get oscp")
 	return res.ToString()
 }
+
+// Check service -
+func CheckSvc(f *FunctionCall) string {
+	svc := unpackArgs("service", f.Arguments)
+	res, _ := ExecTool("oc", fmt.Sprintf("-n openstack get %s", svc))
+	return res.ToString()
+}

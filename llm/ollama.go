@@ -148,6 +148,11 @@ func (c *OllamaProvider) GenerateChat(
 				f.Result = result
 			}
 
+			if f.Name == "check_openstack_svc" {
+				result = tools.CheckSvc(f)
+				f.Result = result
+			}
+
 			if s.Debug {
 				fmt.Printf("[DEBUG] |-> FunctionCall:\n")
 				fmt.Printf("[DEBUG] |-->> %s\n", f.Name)

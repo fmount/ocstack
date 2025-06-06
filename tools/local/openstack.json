@@ -5,5 +5,22 @@
       "name": "get_openstack_control_plane",
       "description": "Runs the openshift client (oc) to get the openstack control plane status"
     }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "check_openstack_svc",
+      "description": "Runs the openshift client (oc) to get the openstack control plane service status",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The service to check. e.g. Glance"
+          }
+        },
+        "required": ["service"]
+      }
+    }
   }
 ]
