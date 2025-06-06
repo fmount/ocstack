@@ -39,6 +39,17 @@ func Hello(args map[string]any) string {
 	return fmt.Sprintf("Hello %s\n", args["name"])
 }
 
+func unpackArgs(key string, args map[string]any) string {
+	// only return the value if the key exists and is a .(string)
+	if arg, exists := args[key]; exists {
+		if argStr, ok := arg.(string); ok {
+			return argStr
+		}
+		return ""
+	}
+	return ""
+}
+
 // OC - Run openshift client tool
 func OC(f *FunctionCall) string {
 	args := unpackArgs("command", f.Arguments)
@@ -46,6 +57,7 @@ func OC(f *FunctionCall) string {
 	return res.ToString()
 }
 
+// Ctlplane -
 func Ctlplane(f *FunctionCall) string {
 	//args := unpackArgs("command", f.Arguments)
 	res, _ := ExecTool("oc", "-n openstack get oscp")

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	tools "github.com/fmount/ocstack/tools"
 	"io"
 	"net/http"
 	"net/url"
@@ -36,7 +37,17 @@ type LLamaPayload struct {
 	Messages []LLamaMessage `json:"messages"`
 	Stream   bool           `json:"stream"`
 	//History History
-	Tools []byte `json:"tools"`
+	Tools []tools.Tool `json:"tools"`
+}
+
+// ToLLamaCppTools -
+func ToLLamaCppTools(b []byte) ([]tools.Tool, error) {
+	var tools []tools.Tool
+	err := json.Unmarshal(b, &tools)
+	if err != nil {
+		return nil, err
+	}
+	return tools, err
 }
 
 // ChatCompletion represents the main response structure
@@ -123,6 +134,20 @@ func (c *LLamaCppProvider) GenerateChat(
 		fmt.Printf("[DEBUG] - Path: %s\n", c.llamaURL.Path)
 	}
 
+	// If it's the first message, let's set some context in the history
+	// to drive the reasoning
+	if len(s.GetHistory().Text) == 0 {
+		s.UpdateContext()
+	}
+
+	var er error
+	var t []tools.Tool = []tools.Tool{}
+
+	t, er = ToLLamaCppTools(s.Tools)
+	if er != nil {
+		return er
+	}
+
 	h := s.GetHistory()
 	var msgs []LLamaMessage
 
@@ -142,7 +167,7 @@ func (c *LLamaCppProvider) GenerateChat(
 		Model:    s.Model,
 		Messages: msgs,
 		Stream:   false,
-		Tools:    nil,
+		Tools:    t,
 	}
 
 	var err error
@@ -206,6 +231,9 @@ func (c *LLamaCppProvider) Request(
 	}
 	if res.StatusCode != 200 {
 		return nil, fmt.Errorf("unexpected status %d\n", res.StatusCode)
+	}
+	if s.Debug {
+		fmt.Printf("[DEBUG] - JSON Response -> %s\n", resBody)
 	}
 	return resBody, nil
 }

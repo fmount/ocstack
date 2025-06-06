@@ -32,6 +32,8 @@ In this PoC, agents act as a bridge between human operators and the
 OpenStack/OpenShift ecosystem—empowering users to get help, ask questions, or
 automate repetitive tasks in real-time.
 
+**Demo:** https://asciinema.org/a/722296
+
 ## Chat with your OpenStack environment
 
 Once set up, you can interact with your OpenStack deployment using natural

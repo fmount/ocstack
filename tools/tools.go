@@ -81,17 +81,6 @@ func RenderExec(f *FunctionCall) (string, error) {
 	return buf.String(), nil
 }
 
-func unpackArgs(key string, args map[string]any) string {
-	// only return the value if the key exists and is a .(string)
-	if arg, exists := args[key]; exists {
-		if argStr, ok := arg.(string); ok {
-			return argStr
-		}
-		return ""
-	}
-	return ""
-}
-
 // RegisterTools - A function that either select local tools or simply
 // discover what is available through and endpoint. Currently local tools
 // only are supported
