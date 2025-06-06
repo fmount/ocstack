@@ -60,8 +60,40 @@ on OpenShift.
 
 ### Run the ocstack assistant
 
-Once the openstack on openshift environment is ready, start the ocstack
-assistant:
+## Run OLLAMA
+
+You can now run ocstack using a local Ollama server for offline LLM support,
+instead of relying on remote APIs:
+
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+```
+
+### Download a model (e.g., qwen3):
+
+```bash
+ollama pull qwen3:latest
+```
+
+### Start the Ollama server:
+
+```bash
+ollama serve &
+```
+
+Alternatively, depending on the environment, use systemd:
+
+```bash
+systemctl start ollama
+```
+
+and watch it using journalctl.
+
+This starts a local REST API compatible with OpenAI’s `v1/chat/completions` at
+`http://127.0.0.1:11434`.
+
+Once the openstack on openshift environment is ready, and `OLLAMA` serves a model,
+start the ocstack assistant:
 
 ```bash
 $ export KUBECONFIG=$HOME/.crc/machines/crc/kubeconfig; make build && make run
