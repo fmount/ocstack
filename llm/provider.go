@@ -2,6 +2,7 @@ package llm
 
 import (
 	"context"
+	"fmt"
 )
 
 const (
@@ -47,6 +48,7 @@ type Session struct {
 	History History
 	Tools   []byte
 	Debug   bool
+	Config  map[string]string
 }
 
 type Message struct {
@@ -81,8 +83,31 @@ func (s *Session) UpdateHistory(m Message) {
 	s.SetHistory(History{h})
 }
 
+func (s *Session) GetConfig() map[string]string {
+	return s.Config
+}
+
+func (s *Session) SetConfig(k string, v string) {
+	s.Config[k] = v
+}
+
+func (s *Session) GetConfigItem(k string) (string, string) {
+
+	val, ok := s.Config[k]
+	if !ok {
+		return "", "Config option not present"
+	}
+	return val, ""
+}
+
+func (s *Session) ShowConfig() {
+	for k, v := range s.Config {
+		fmt.Printf("[%s - %s]\n", k, v)
+	}
+}
+
 // NewSession -
-func NewSession(model string, tmpl string, h History, t []byte, d bool) (*Session, error) {
+func NewSession(model string, tmpl string, h History, t []byte, d bool, c map[string]string) (*Session, error) {
 	// we might need some validation and err returning here. Right now this
 	// is just a wrapper
 	return &Session{
@@ -91,6 +116,7 @@ func NewSession(model string, tmpl string, h History, t []byte, d bool) (*Sessio
 		History: h,
 		Tools:   t,
 		Debug:   d,
+		Config:  c,
 	}, nil
 }
 

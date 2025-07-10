@@ -19,6 +19,8 @@ func TermHelper(cmd string) {
 		fmt.Println("Available Commands :> ")
 		fmt.Println("1. /quit ")
 		fmt.Println("2. /template ")
+		fmt.Println("3. /namespace ")
+		fmt.Println("4. /config ")
 		fmt.Println("----")
 	} else {
 		fmt.Println("----")
@@ -43,7 +45,10 @@ func help(cmd string) {
 	case cmd == "template":
 		fmt.Println("Usage: /template <profile>")
 		// TODO: Print available profiles
-		break
+	case cmd == "namespace":
+		fmt.Println("Usage: /namespace <ns>")
+	case cmd == "config":
+		fmt.Println("Usage: /config")
 	default:
 	}
 }

@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	DEBUG = true // switch to true to print additional information
+	DEBUG = false // switch to true to print additional information
 )
 
 // CliCommand -
@@ -42,7 +42,7 @@ func CliCommand(q string, s *llm.Session) {
 		}
 		// no session, return
 		if s == nil {
-			ocstack.ShowWarn(fmt.Sprintf("No session"))
+			ocstack.ShowWarn("No session")
 			return
 		}
 		profile, err := t.LoadProfile(tokens[1])
@@ -53,6 +53,12 @@ func CliCommand(q string, s *llm.Session) {
 		ocstack.TermHeader(tokens[1])
 		s.Profile = profile
 		s.UpdateContext()
+	case tq == "namespace":
+		// set or update namespace
+		s.SetConfig(ocstack.NAMESPACE, tokens[1])
+	case tq == "config":
+		// show config options
+		s.ShowConfig()
 	case tq == "help":
 		ocstack.TermHelper("")
 		return
@@ -85,6 +91,8 @@ func main() {
 		ocstack.ShowWarn(fmt.Sprintf("%s\n", err))
 	}
 
+	config := tools.LoadDefaultConfig()
+
 	// Create a new session for the current execution before entering the
 	// loop
 	s, _ := llm.NewSession(
@@ -93,6 +101,7 @@ func main() {
 		h,
 		b,
 		DEBUG,
+		config,
 	)
 
 	// pass the loaded profile

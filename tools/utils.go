@@ -6,6 +6,13 @@ import (
 	"os"
 )
 
+// LoadDefaultConfig -
+func LoadDefaultConfig() map[string]string {
+	c := make(map[string]string)
+	c[ocstack.NAMESPACE] = ocstack.DEFAULT_NAMESPACE
+	return c
+}
+
 // GetKubeConfig -
 func GetKubeConfig() (string, error) {
 	path := os.Getenv("KUBECONFIG")
