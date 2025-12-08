@@ -65,15 +65,41 @@ func OC(f *FunctionCall) string {
 }
 
 // Ctlplane -
-func Ctlplane(f *FunctionCall) string {
+func Ctlplane(f *FunctionCall, ns string) string {
 	//args := unpackArgs("command", f.Arguments)
-	res, _ := ExecTool("oc", "-n openstack get oscp")
+	res, _ := ExecTool("oc", fmt.Sprintf("-n %s get oscp", ns))
 	return res.ToString()
 }
 
 // Check service -
-func CheckSvc(f *FunctionCall) string {
+func CheckSvc(f *FunctionCall, ns string) string {
 	svc := unpackArgs("service", f.Arguments)
-	res, _ := ExecTool("oc", fmt.Sprintf("-n openstack get %s", svc))
+	res, _ := ExecTool("oc", fmt.Sprintf("-n %s get %s", ns, svc))
+	return res.ToString()
+}
+
+func GetDeployedVersion(f *FunctionCall, ns string) string {
+	options := "-o custom-columns=VERSION:.status.deployedVersion --no-headers"
+	res, _ := ExecTool("oc", fmt.Sprintf("-n %s get openstackversion %s", ns, options))
+	return res.ToString()
+}
+
+func GetAvailableVersion(f *FunctionCall, ns string) string {
+	options := "-o custom-columns=.VERSION:.status.availableVersion --no-headers"
+	res, _ := ExecTool("oc", fmt.Sprintf("-n %s get openstackversion %s", ns, options))
+	return res.ToString()
+}
+
+func MinorUpdate(f *FunctionCall, ns string) string {
+	av := GetAvailableVersion(f, ns)
+	dv := GetDeployedVersion(f, ns)
+	if av == dv {
+		return "OpenStack is up to date"
+	}
+	return "OpenStack control update available!"
+}
+
+func TriggerUpdate(f *FunctionCall, ns string, name string, targetVersion string) string {
+	res, _ := ExecTool("oc", fmt.Sprintf("-n %s patch openstackversion %s --type=json -p=\"[{'op': 'replace', 'path': '/spec/targetVersion', '%s'}]\"", ns, name, targetVersion))
 	return res.ToString()
 }

@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
+	"github.com/fmount/ocstack/pkg/ocstack"
 	tools "github.com/fmount/ocstack/tools"
 	"github.com/ollama/ollama/api"
 )
@@ -132,6 +134,7 @@ func (c *OllamaProvider) GenerateChat(
 			}
 
 			var result string
+			ns := s.GetConfig()[ocstack.NAMESPACE]
 
 			if f.Name == "hello" {
 				result = tools.Hello(f.Arguments)
@@ -144,12 +147,26 @@ func (c *OllamaProvider) GenerateChat(
 			}
 
 			if f.Name == "get_openstack_control_plane" {
-				result = tools.Ctlplane(f)
+				result = tools.Ctlplane(f, ns)
 				f.Result = result
 			}
 
 			if f.Name == "check_openstack_svc" {
-				result = tools.CheckSvc(f)
+				result = tools.CheckSvc(f, ns)
+				f.Result = result
+			}
+
+			if f.Name == "needs_minor_update" {
+				result = tools.MinorUpdate(f, ns)
+				f.Result = result
+			}
+
+			if f.Name == "get_deployed_version" {
+				result = tools.GetDeployedVersion(f, ns)
+				f.Result = result
+			}
+			if f.Name == "get_available_version" {
+				result = tools.GetAvailableVersion(f, ns)
 				f.Result = result
 			}
 
