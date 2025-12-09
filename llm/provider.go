@@ -5,6 +5,13 @@ import (
 	"fmt"
 )
 
+// MCPRegistryInterface defines the interface for MCP tool registry
+type MCPRegistryInterface interface {
+	IsToolFromMCP(string) bool
+	ExecuteMCPTool(interface{}) string
+	GetAllTools() []byte
+}
+
 const (
 	OLLAMAPROVIDER = "ollama"
 	LLAMACPP       = "llama"
@@ -43,12 +50,13 @@ func GetProvider(pID string) (Client, error) {
 }
 
 type Session struct {
-	Profile string
-	Model   string
-	History History
-	Tools   []byte
-	Debug   bool
-	Config  map[string]string
+	Profile     string
+	Model       string
+	History     History
+	Tools       []byte
+	Debug       bool
+	Config      map[string]string
+	mcpRegistry interface{} // Interface to avoid circular dependency
 }
 
 type Message struct {
@@ -111,13 +119,27 @@ func NewSession(model string, tmpl string, h History, t []byte, d bool, c map[st
 	// we might need some validation and err returning here. Right now this
 	// is just a wrapper
 	return &Session{
-		Profile: tmpl,
-		Model:   model,
-		History: h,
-		Tools:   t,
-		Debug:   d,
-		Config:  c,
+		Profile:     tmpl,
+		Model:       model,
+		History:     h,
+		Tools:       t,
+		Debug:       d,
+		Config:      c,
+		mcpRegistry: nil,
 	}, nil
+}
+
+// SetMCPRegistry sets the MCP registry for the session
+func (s *Session) SetMCPRegistry(registry interface{}) {
+	s.mcpRegistry = registry
+}
+
+// GetMCPRegistry returns the MCP registry if it implements the required interface
+func (s *Session) GetMCPRegistry() MCPRegistryInterface {
+	if registry, ok := s.mcpRegistry.(MCPRegistryInterface); ok {
+		return registry
+	}
+	return nil
 }
 
 // SaveSession -

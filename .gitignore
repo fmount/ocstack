@@ -3,4 +3,5 @@
 /hack
 *.log
 *.test
+ocstack
 kubeconfig

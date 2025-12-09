@@ -21,6 +21,7 @@ func TermHelper(cmd string) {
 		fmt.Println("2. /template ")
 		fmt.Println("3. /namespace ")
 		fmt.Println("4. /config ")
+		fmt.Println("5. /mcp ")
 		fmt.Println("----")
 	} else {
 		fmt.Println("----")
@@ -49,6 +50,12 @@ func help(cmd string) {
 		fmt.Println("Usage: /namespace <ns>")
 	case cmd == "config":
 		fmt.Println("Usage: /config")
+	case cmd == "mcp":
+		fmt.Println("Usage: /mcp <command>")
+		fmt.Println("Commands:")
+		fmt.Println("  connect <server-type> - Connect to MCP server (filesystem, brave-search, sqlite)")
+		fmt.Println("  disconnect - Disconnect from MCP server")
+		fmt.Println("  tools - List available tools")
 	default:
 	}
 }

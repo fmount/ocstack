@@ -131,6 +131,16 @@ func RegisterTools() ([]byte, error) {
 	return GetRegisteredTools(LOCAL_TOOLS)
 }
 
+// RegisterToolsWithMCP - Extended version that supports MCP tools alongside local tools
+func RegisterToolsWithMCP(mcpRegistry interface{}) ([]byte, error) {
+	// If mcpRegistry implements GetAllTools method, use it
+	if registry, ok := mcpRegistry.(interface{ GetAllTools() []byte }); ok {
+		return registry.GetAllTools(), nil
+	}
+	// Fallback to local tools only
+	return RegisterTools()
+}
+
 // ToolResult -
 type ToolResult struct {
 	Stdout   string `json:"stdout,omitempty"`

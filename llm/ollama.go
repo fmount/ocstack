@@ -136,38 +136,36 @@ func (c *OllamaProvider) GenerateChat(
 			var result string
 			ns := s.GetConfig()[ocstack.NAMESPACE]
 
-			if f.Name == "hello" {
-				result = tools.Hello(f.Arguments)
+			// Check if this is an MCP tool
+			if mcpRegistry := s.GetMCPRegistry(); mcpRegistry != nil && mcpRegistry.IsToolFromMCP(f.Name) {
+				// Execute MCP tool
+				result = mcpRegistry.ExecuteMCPTool(f)
 				f.Result = result
-			}
-
-			if f.Name == "oc" {
-				result = tools.OC(f)
-				f.Result = result
-			}
-
-			if f.Name == "get_openstack_control_plane" {
-				result = tools.Ctlplane(f, ns)
-				f.Result = result
-			}
-
-			if f.Name == "check_openstack_svc" {
-				result = tools.CheckSvc(f, ns)
-				f.Result = result
-			}
-
-			if f.Name == "needs_minor_update" {
-				result = tools.MinorUpdate(f, ns)
-				f.Result = result
-			}
-
-			if f.Name == "get_deployed_version" {
-				result = tools.GetDeployedVersion(f, ns)
-				f.Result = result
-			}
-			if f.Name == "get_available_version" {
-				result = tools.GetAvailableVersion(f, ns)
-				f.Result = result
+			} else {
+				// Handle local tools
+				switch f.Name {
+				case "hello":
+					result = tools.Hello(f.Arguments)
+					f.Result = result
+				case "oc":
+					result = tools.OC(f)
+					f.Result = result
+				case "get_openstack_control_plane":
+					result = tools.Ctlplane(f, ns)
+					f.Result = result
+				case "check_openstack_svc":
+					result = tools.CheckSvc(f, ns)
+					f.Result = result
+				case "needs_minor_update":
+					result = tools.MinorUpdate(f, ns)
+					f.Result = result
+				case "get_deployed_version":
+					result = tools.GetDeployedVersion(f, ns)
+					f.Result = result
+				case "get_available_version":
+					result = tools.GetAvailableVersion(f, ns)
+					f.Result = result
+				}
 			}
 
 			if s.Debug {
