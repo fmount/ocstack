@@ -5,3 +5,5 @@
 *.test
 ocstack
 kubeconfig
+examples/openstack-mcp-server/__pycache__/
+examples/openstack-mcp-server/uv.lock

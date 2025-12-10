@@ -20,7 +20,17 @@
     "type": "function",
     "function": {
       "name": "oc",
-      "description": "Runs the openshift client (oc) to interact with an openshift environment"
+      "description": "Runs the openshift client (oc) to interact with an openshift environment",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "The oc command to execute"
+          }
+        },
+        "required": ["command"]
+      }
     }
   }
 ]

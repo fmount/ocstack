@@ -3,7 +3,17 @@
     "type": "function",
     "function": {
       "name": "get_openstack_control_plane",
-      "description": "Runs the openshift client (oc) to get the openstack control plane status"
+      "description": "Runs the openshift client (oc) to get the openstack control plane status",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "namespace": {
+            "type": "string",
+            "description": "The OpenStack namespace (optional)"
+          }
+        },
+        "required": []
+      }
     }
   },
   {
@@ -14,9 +24,13 @@
       "parameters": {
         "type": "object",
         "properties": {
-          "name": {
+          "service": {
             "type": "string",
             "description": "The service to check. e.g. Glance"
+          },
+          "namespace": {
+            "type": "string",
+            "description": "The OpenStack namespace (optional)"
           }
         },
         "required": ["service"]
@@ -27,21 +41,51 @@
     "type": "function",
     "function": {
       "name": "needs_minor_update",
-      "description": "Check whether the openstack control plane is up to date or we need to perform a minor update"
+      "description": "Check whether the openstack control plane is up to date or we need to perform a minor update",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "namespace": {
+            "type": "string",
+            "description": "The OpenStack namespace (optional)"
+          }
+        },
+        "required": []
+      }
     }
   },
   {
     "type": "function",
     "function": {
       "name": "get_deployed_version",
-      "description": "Returns which openstack version is deployed"
+      "description": "Returns which openstack version is deployed",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "namespace": {
+            "type": "string",
+            "description": "The OpenStack namespace (optional)"
+          }
+        },
+        "required": []
+      }
     }
   },
   {
     "type": "function",
     "function": {
       "name": "get_available_version",
-      "description": "Returns which openstack version is available, which is useful, in combination to get_deployed_version, to check whether we need to perform a minor update"
+      "description": "Returns which openstack version is available, which is useful, in combination to get_deployed_version, to check whether we need to perform a minor update",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "namespace": {
+            "type": "string",
+            "description": "The OpenStack namespace (optional)"
+          }
+        },
+        "required": []
+      }
     }
   },
   {

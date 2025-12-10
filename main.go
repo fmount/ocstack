@@ -153,7 +153,7 @@ func connectMCP(s *llm.Session, serverType string, url string) {
 	registry := mcp.NewMCPToolRegistry()
 	registry.SetMCPClient(client)
 	
-	// Get local tools
+	// Get local tools and add them to the registry
 	localTools, err := tools.RegisterTools()
 	if err != nil {
 		fmt.Printf("Warning: failed to load local tools: %v\n", err)
@@ -161,7 +161,7 @@ func connectMCP(s *llm.Session, serverType string, url string) {
 		registry.SetLocalTools(localTools)
 	}
 	
-	// Update session with combined tools
+	// Update session with combined tools (MCP tools take priority)
 	s.Tools = registry.GetAllTools()
 	s.SetMCPRegistry(registry)
 	
@@ -171,15 +171,16 @@ func connectMCP(s *llm.Session, serverType string, url string) {
 func disconnectMCP(s *llm.Session) {
 	if mcpRegistry := s.GetMCPRegistry(); mcpRegistry != nil {
 		fmt.Println("Disconnecting MCP client...")
-		// Reset to local tools only
+		// Fall back to local tools only
 		localTools, err := tools.RegisterTools()
 		if err != nil {
 			fmt.Printf("Warning: failed to load local tools: %v\n", err)
+			s.Tools = []byte("[]") // No tools available
 		} else {
 			s.Tools = localTools
 		}
 		s.SetMCPRegistry(nil)
-		fmt.Println("Disconnected from MCP server")
+		fmt.Println("Disconnected from MCP server - using local tools only")
 	} else {
 		fmt.Println("No MCP connection active")
 	}
@@ -187,7 +188,7 @@ func disconnectMCP(s *llm.Session) {
 
 func listMCPTools(s *llm.Session) {
 	if mcpRegistry := s.GetMCPRegistry(); mcpRegistry != nil {
-		fmt.Println("Available tools (local + MCP):")
+		fmt.Println("Available tools (MCP + local, MCP takes priority):")
 		
 		// Get all tools from the registry
 		allToolsData := mcpRegistry.GetAllTools()
@@ -240,6 +241,7 @@ func main() {
 	}
 
 	h := llm.History{}
+	// Register local tools - these will be available alongside MCP tools
 	b, err := tools.RegisterTools()
 	if err != nil {
 		panic(err)

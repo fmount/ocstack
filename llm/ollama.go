@@ -136,13 +136,13 @@ func (c *OllamaProvider) GenerateChat(
 			var result string
 			ns := s.GetConfig()[ocstack.NAMESPACE]
 
-			// Check if this is an MCP tool
+			// MCP tools take priority - check MCP first
 			if mcpRegistry := s.GetMCPRegistry(); mcpRegistry != nil && mcpRegistry.IsToolFromMCP(f.Name) {
-				// Execute MCP tool
+				// Execute MCP tool (preferred)
 				result = mcpRegistry.ExecuteMCPTool(f)
 				f.Result = result
 			} else {
-				// Handle local tools
+				// Fall back to local tools if MCP doesn't have this tool
 				switch f.Name {
 				case "hello":
 					result = tools.Hello(f.Arguments)
@@ -164,6 +164,25 @@ func (c *OllamaProvider) GenerateChat(
 					f.Result = result
 				case "get_available_version":
 					result = tools.GetAvailableVersion(f, ns)
+					f.Result = result
+				case "trigger_minor_update":
+					// Extract arguments manually since unpackArgs is not exported
+					namespace := ""
+					targetVersion := ""
+					openstackVersion := ""
+					if val, exists := f.Arguments["namespace"].(string); exists {
+						namespace = val
+					}
+					if val, exists := f.Arguments["targetVersion"].(string); exists {
+						targetVersion = val
+					}
+					if val, exists := f.Arguments["openstackVersion"].(string); exists {
+						openstackVersion = val
+					}
+					result = tools.TriggerUpdate(f, namespace, openstackVersion, targetVersion)
+					f.Result = result
+				default:
+					result = fmt.Sprintf("Tool '%s' not found in MCP or local tools", f.Name)
 					f.Result = result
 				}
 			}

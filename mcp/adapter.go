@@ -49,10 +49,33 @@ type FunctionCall struct {
 
 // ExecuteMCPTool executes an MCP tool and returns the result in the expected format
 func (a *ToolAdapter) ExecuteMCPTool(f interface{}) string {
-	functionCall, ok := f.(*FunctionCall)
-	if !ok {
-		return "Error: invalid function call type"
+	var functionCall *FunctionCall
+	
+	// Handle both mcp.FunctionCall and tools.FunctionCall types
+	switch fc := f.(type) {
+	case *FunctionCall:
+		functionCall = fc
+	default:
+		// Try to convert from tools.FunctionCall or other types
+		// by using reflection or type assertion
+		if toolsFC, ok := f.(interface {
+			GetName() string
+			GetArguments() map[string]any
+		}); ok {
+			functionCall = &FunctionCall{
+				Name:      toolsFC.GetName(),
+				Arguments: toolsFC.GetArguments(),
+			}
+		} else {
+			// Try direct field access via reflection-like approach
+			// This is a more generic solution for any struct with Name and Arguments fields
+			return a.convertAndExecute(f)
+		}
 	}
+	if functionCall == nil {
+		return "Error: unable to convert function call"
+	}
+	
 	if !a.client.IsConnected() {
 		return "Error: MCP client not connected"
 	}
@@ -65,6 +88,42 @@ func (a *ToolAdapter) ExecuteMCPTool(f interface{}) string {
 
 	if response.IsError {
 		return fmt.Sprintf("MCP tool %s returned error: %s", functionCall.Name, a.formatToolResults(response.Content))
+	}
+
+	return a.formatToolResults(response.Content)
+}
+
+// convertAndExecute handles conversion from tools.FunctionCall to mcp.FunctionCall
+func (a *ToolAdapter) convertAndExecute(f interface{}) string {
+	// Simple conversion approach: convert through JSON (less efficient but more reliable)
+	// This handles the tools.FunctionCall -> mcp.FunctionCall conversion
+	jsonBytes, err := json.Marshal(f)
+	if err != nil {
+		return fmt.Sprintf("Error: unable to marshal function call: %v", err)
+	}
+	
+	var funcCall struct {
+		Name      string         `json:"name"`
+		Arguments map[string]any `json:"arguments"`
+	}
+	
+	if err := json.Unmarshal(jsonBytes, &funcCall); err != nil {
+		return fmt.Sprintf("Error: unable to unmarshal function call: %v", err)
+	}
+	
+	// Now execute with the converted data
+	if !a.client.IsConnected() {
+		return "Error: MCP client not connected"
+	}
+
+	ctx := context.Background()
+	response, err := a.client.CallTool(ctx, funcCall.Name, funcCall.Arguments)
+	if err != nil {
+		return fmt.Sprintf("Error calling MCP tool %s: %v", funcCall.Name, err)
+	}
+
+	if response.IsError {
+		return fmt.Sprintf("MCP tool %s returned error: %s", funcCall.Name, a.formatToolResults(response.Content))
 	}
 
 	return a.formatToolResults(response.Content)
@@ -122,24 +181,36 @@ func (r *MCPToolRegistry) SetLocalTools(localTools []byte) {
 	r.localTools = localTools
 }
 
-// GetAllTools returns all available tools (local + MCP) in the format expected by the system
+// GetAllTools returns all available tools (local + MCP) with MCP tools taking priority
 func (r *MCPToolRegistry) GetAllTools() []byte {
 	var allTools []Tool
+	mcpToolNames := make(map[string]bool) // Track MCP tool names for priority
 
-	// Add local tools
-	if r.localTools != nil {
-		var localToolsList []Tool
-		if err := json.Unmarshal(r.localTools, &localToolsList); err == nil {
-			allTools = append(allTools, localToolsList...)
-		}
-	}
-
-	// Add MCP tools if available
+	// Add MCP tools first (they take priority)
 	if r.mcpEnabled && r.mcpClient != nil && r.mcpClient.IsConnected() {
 		mcpToolsData := r.mcpClient.GetAvailableTools()
 		var mcpToolsList []Tool
 		if err := json.Unmarshal(mcpToolsData, &mcpToolsList); err == nil {
 			allTools = append(allTools, mcpToolsList...)
+			// Track MCP tool names
+			for _, tool := range mcpToolsList {
+				if tool.Function != nil {
+					mcpToolNames[tool.Function.Name] = true
+				}
+			}
+		}
+	}
+
+	// Add local tools only if they don't conflict with MCP tools
+	if r.localTools != nil {
+		var localToolsList []Tool
+		if err := json.Unmarshal(r.localTools, &localToolsList); err == nil {
+			for _, tool := range localToolsList {
+				// Only add local tool if MCP doesn't have a tool with the same name
+				if tool.Function != nil && !mcpToolNames[tool.Function.Name] {
+					allTools = append(allTools, tool)
+				}
+			}
 		}
 	}
 

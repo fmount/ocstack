@@ -101,13 +101,14 @@ func (c *MCPClient) Connect(ctx context.Context) error {
 		return fmt.Errorf("failed to initialize MCP protocol: %w", err)
 	}
 	
-	// List available tools
+	c.setState(StateConnected)
+	
+	// List available tools after setting connected state
 	if err := c.refreshTools(); err != nil {
 		// Don't fail connection if tool listing fails, just log
 		fmt.Printf("Warning: failed to refresh tools: %v\n", err)
 	}
 	
-	c.setState(StateConnected)
 	return nil
 }
 

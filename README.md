@@ -215,3 +215,127 @@ In your `main.go`, update the provider selection to use `LLAMACPP`:
 ```bash
 $ export KUBECONFIG=$HOME/.crc/machines/crc/kubeconfig; make build && make run
 ```
+
+## Available Makefile Targets
+
+OCStack provides convenient Makefile targets for building, running, and managing the MCP server:
+
+### Core Targets
+
+- `make build` - Build the ocstack binary
+- `make run` - Run ocstack (requires build first)
+- `make clean` - Clean build artifacts
+- `make test` - Run tests
+- `make fmt` - Format Go code
+- `make lint` - Run linters (requires golangci-lint)
+
+### MCP Server Targets
+
+- `make mcp-server` - Start the OpenStack MCP server (includes dependency installation)
+- `make mcp-server-deps` - Install MCP server dependencies only
+- `make mcp-server-stop` - Stop the running MCP server
+
+### Example Workflow
+
+```bash
+# Start MCP server in one terminal
+make mcp-server
+
+# In another terminal, build and run ocstack
+export KUBECONFIG=$(pwd)/kubeconfig
+make build && make run
+
+# Connect to MCP and start using tools
+Q :> /mcp connect http http://localhost:8080/mcp
+Q :> What is the deployed OpenStack version in the 'openstack' namespace?
+```
+
+## MCP Server Integration
+
+OCStack supports both **local tools** and **MCP tools** with a hybrid approach where MCP tools take priority when available.
+
+### Running the Example MCP Server
+
+OCStack includes a complete OpenStack MCP server example in `examples/openstack-mcp-server/`.
+
+#### Quick Start
+
+```bash
+# Start the MCP server (requires Python 3.9+)
+make mcp-server
+
+# In another terminal, start ocstack
+export KUBECONFIG=$(pwd)/kubeconfig  # Set your OpenShift config
+make build && make run
+
+# Connect to the MCP server
+Q :> /mcp connect http http://localhost:8080/mcp
+
+# List available tools
+Q :> /mcp tools
+
+# Use OpenStack tools via MCP
+Q :> What is the deployed OpenStack version?
+Q :> Check the status of Nova service
+```
+
+#### Manual Setup
+
+If you prefer manual setup:
+
+```bash
+# Navigate to the MCP server directory
+cd examples/openstack-mcp-server
+
+# Create virtual environment and install dependencies
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Start the server
+python server.py
+```
+
+### Available Tools
+
+The MCP server provides these OpenStack management tools:
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `hello` | Test function | `name` (string) |
+| `oc` | Run OpenShift CLI commands | `command` (string) |
+| `get_openstack_control_plane` | Get control plane status | `namespace` (optional) |
+| `check_openstack_svc` | Check service status | `service` (required), `namespace` (optional) |
+| `needs_minor_update` | Check if update needed | `namespace` (optional) |
+| `get_deployed_version` | Get current version | `namespace` (optional) |
+| `get_available_version` | Get available version | `namespace` (optional) |
+
+**Note**: The local tools include one additional tool (`trigger_minor_update`) that's only available locally.
+
+### MCP Commands
+
+- `/mcp connect http http://localhost:8080/mcp` - Connect to HTTP MCP server
+- `/mcp disconnect` - Disconnect and fall back to local tools
+- `/mcp tools` - List all available tools (MCP + local)
+
+### Configuration
+
+The MCP server can be configured via environment variables:
+
+```bash
+export KUBECONFIG=/path/to/your/kubeconfig    # Required for OpenStack tools
+export MCP_HOST=localhost                     # Server host (default: localhost)
+export MCP_PORT=8080                         # Server port (default: 8080)
+export DEFAULT_NAMESPACE=openstack          # Default 'openstack' namespace
+```
+
+
+### Troubleshooting
+
+#### MCP Connection Issues
+
+- **"client not connected"**: Ensure the MCP server is running (`make mcp-server`)
+- **Connection timeouts**: Check if the server is accessible at `http://localhost:8080/health`
+- **Tool execution hangs**: Verify KUBECONFIG is set and OpenShift cluster is accessible
+- **Tool timeouts**: Check network connectivity to OpenShift cluster
+- **Permission errors**: Verify your OpenShift user has proper RBAC permissions
