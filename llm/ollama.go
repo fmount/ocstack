@@ -122,6 +122,10 @@ func (c *OllamaProvider) GenerateChat(
 			Text: resp.Message.Content,
 		})
 
+		// Collect all tool results before processing them collectively
+		var toolResults []*tools.FunctionCall
+		ns := s.GetConfig()[ocstack.NAMESPACE]
+
 		for _, tool := range resp.Message.ToolCalls {
 			// Build function Call
 			toolArgs, err := json.Marshal(tool.Function.Arguments)
@@ -134,7 +138,6 @@ func (c *OllamaProvider) GenerateChat(
 			}
 
 			var result string
-			ns := s.GetConfig()[ocstack.NAMESPACE]
 
 			// MCP tools take priority - check MCP first
 			if mcpRegistry := s.GetMCPRegistry(); mcpRegistry != nil && mcpRegistry.IsToolFromMCP(f.Name) {
@@ -188,19 +191,20 @@ func (c *OllamaProvider) GenerateChat(
 			}
 
 			if s.Debug {
-				fmt.Printf("[DEBUG] |-> FunctionCall:\n")
 				fmt.Printf("[DEBUG] |-->> %s\n", f.Name)
-				fmt.Printf("[DEBUG] |-->> %v\n", f.Arguments)
-				fmt.Printf("[DEBUG] | -->> %v\n", f.Result)
+				fmt.Printf("[DEBUG] | -->> out: %s\n", f.Result)
 			}
-			// Process the data we just got by doing a recursive call to the
-			// GenerateChat function.
-			outPrompt, err := tools.RenderExec(f)
-			if err != nil {
-				return fmt.Errorf("%v", err)
-			}
-			c.GenerateChat(ctx, outPrompt, s)
+
+			// Add to collection instead of processing immediately
+			toolResults = append(toolResults, f)
 		}
+
+		// Process all tool results collectively for agentic reasoning
+		if len(toolResults) > 0 {
+			collectivePrompt := tools.RenderCollectiveExec(toolResults)
+			c.GenerateChat(ctx, collectivePrompt, s)
+		}
+
 		return nil
 	}
 

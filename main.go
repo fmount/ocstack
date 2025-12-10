@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	DEBUG = true // switch to true to print additional information
+	DEBUG = false // switch to true to print additional information
 )
 
 // CliCommand -

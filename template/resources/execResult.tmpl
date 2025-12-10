@@ -1,9 +1,27 @@
-Parse the output received from the tool execution {{ .Name }}.
-The function returned the following result:
+You have executed {{ .Count }} tools and gathered the following information:
 
-{{ .Result }}
+{{range $index, $tool := .ToolResults}}{{ $tool.Name }}:
+   Result: {{ $tool.Result }}
 
-- Think critically about the output
-- Do not attempt to generate any new resource
-- Try to get a conclusion from the result printed above
-- If there's no real conclusion, try to determine if the same command (with different arguments) can be run to check additional resources.
+{{end}}
+
+## Analysis Instructions
+
+Please analyze ALL the above tool results collectively and provide:
+
+1. **Comprehensive Analysis**: What does the combined data tell us about the current state?
+
+2. **Relationship Analysis**: How do these results relate to each other? Are there any contradictions or confirmations?
+
+3. **Evidence-Based Conclusion**: Based on the concrete evidence above, what is your definitive conclusion?
+
+4. **Actionable Recommendations**: What specific actions should be taken based on this analysis?
+
+## Important Guidelines
+
+- Base your response ONLY on the concrete data provided above
+- Look for patterns, inconsistencies, or logical connections between the results
+- Provide clear reasoning for your conclusions
+- Do not make assumptions beyond what the data shows
+- If the data suggests an update is possible, clearly state: "Yes, you can perform an update from X to Y"
+- If the data shows no update is needed, clearly state: "No update is required"

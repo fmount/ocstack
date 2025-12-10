@@ -67,19 +67,42 @@ func ToFunctionCall(name string, b []byte) (*FunctionCall, error) {
 	return f, nil
 }
 
-func RenderExec(f *FunctionCall) (string, error) {
-	tmpl, err := template.ParseFiles("template/resources/execResult.tmpl")
+// renderTemplate - Generic template rendering function
+func renderTemplate(templatePath string, data any, embedErrors bool) (string, error) {
+	tmpl, err := template.ParseFiles(templatePath)
 	if err != nil {
+		if embedErrors {
+			return "Error: Unable to process results - template not found", nil
+		}
 		return "", fmt.Errorf("Error parsing template file: %v", err)
 	}
+	
 	var buf bytes.Buffer
-	// Execute the template with the data and write the output to stdout
-	err = tmpl.Execute(&buf, f)
+	err = tmpl.Execute(&buf, data)
 	if err != nil {
+		if embedErrors {
+			return "Error: Unable to process results - template execution failed", nil
+		}
 		return "", fmt.Errorf("Error executing template: %v", err)
 	}
 	return buf.String(), nil
 }
+
+
+// RenderCollectiveExec - Render multiple tool results for collective reasoning
+func RenderCollectiveExec(toolResults []*FunctionCall) string {
+	data := struct {
+		ToolResults []*FunctionCall
+		Count       int
+	}{
+		ToolResults: toolResults,
+		Count:       len(toolResults),
+	}
+	
+	result, _ := renderTemplate("template/resources/execResult.tmpl", data, true)
+	return result
+}
+
 
 // RegisterTools - A function that either select local tools or simply
 // discover what is available through and endpoint. Currently local tools
