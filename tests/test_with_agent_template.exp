@@ -1,0 +1,49 @@
+#!/usr/bin/expect -f
+
+set timeout 60
+set env(KUBECONFIG) [pwd]/kubeconfig
+
+puts "=== Multi-Tool Comparison Test with Agent Template ==="
+
+spawn ./bin/ocstack
+
+expect "Q :> "
+puts "✓ OCStack started"
+
+send "/template agent\r"
+expect "Q :> "
+puts "✓ Agent template loaded"
+
+send "/mcp connect http http://localhost:8080/mcp\r"
+expect "Successfully connected to MCP server"
+expect "Q :> "
+puts "✓ Connected to MCP server"
+
+puts "\n=== Sending multi-tool comparison query with agent reasoning ==="
+send "Please get both the deployed OpenStack version and the available OpenStack version, then compare them and tell me if a minor update is possible and what the differences are between the versions. Provide detailed reasoning for your analysis.\r"
+
+expect {
+    "A :> " {
+        puts "\n✓ Assistant is responding..."
+        # Capture the response
+        expect -re "(.*)\\nQ :> " {
+            puts "\n=== ASSISTANT RESPONSE WITH AGENT TEMPLATE ==="
+            puts $expect_out(1,string)
+            puts "=== END RESPONSE ==="
+        }
+    }
+    "T :> " {
+        puts "\n✓ Tool calls detected..."
+        expect -re "(.*)\\n"
+        puts "Tool calls: $expect_out(1,string)"
+        exp_continue
+    }
+    timeout {
+        puts "\n Timeout waiting for response"
+    }
+}
+
+send "/exit\r"
+expect eof
+
+puts "\n=== Test Complete ==="

@@ -1,0 +1,39 @@
+#!/usr/bin/expect -f
+
+set timeout 60
+
+spawn ./ocstack
+
+# Wait for startup
+expect "Q :>"
+
+# Load agent template
+send "/template agent\r"
+expect "Q :>"
+
+# Connect to MCP server
+send "/mcp connect http http://localhost:8080/mcp\r"
+expect "Q :>"
+
+# Send the query that should trigger confirmation
+send "Please get both the deployed OpenStack version and the available OpenStack version, then compare them and tell me if a minor update is possible and what the differences are between the versions. Provide detailed reasoning for your analysis.\r"
+
+# Wait for LLM response and potential confirmation prompt
+expect {
+    "Would you like to proceed? (y/n):" {
+        puts "\n=== CONFIRMATION PROMPT DETECTED! ==="
+        send "y\r"
+        expect "Q :>"
+        puts "=== CONFIRMATION ACCEPTED AND COMPLETED ==="
+    }
+    "Q :>" {
+        puts "\n=== NO CONFIRMATION PROMPT (this is the issue) ==="
+    }
+    timeout {
+        puts "\n=== TIMEOUT WAITING FOR RESPONSE ==="
+    }
+}
+
+# Exit
+send "/exit\r"
+expect eof
