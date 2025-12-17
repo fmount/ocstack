@@ -141,6 +141,15 @@ func (c *OllamaProvider) GenerateChat(
 
 			// MCP tools take priority - check MCP first
 			if mcpRegistry := s.GetMCPRegistry(); mcpRegistry != nil && mcpRegistry.IsToolFromMCP(f.Name) {
+				// Always inject namespace parameter if not already provided or if it's nil/empty
+				// All MCP tools receive the namespace and can decide whether to use it
+				namespaceValue, hasNamespace := f.Arguments["namespace"]
+				if !hasNamespace || namespaceValue == nil || namespaceValue == "" {
+					if f.Arguments == nil {
+						f.Arguments = make(map[string]interface{})
+					}
+					f.Arguments["namespace"] = ns
+				}
 				// Execute MCP tool (preferred)
 				result = mcpRegistry.ExecuteMCPTool(f)
 				f.Result = result
