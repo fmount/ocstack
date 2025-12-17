@@ -117,6 +117,37 @@ class OpenStackTools:
         else:
             return "OpenStack control plane update available!"
     
+    def trigger_minor_update(self, arguments: Dict[str, Any]) -> str:
+        """Trigger OpenStack control plane minor update"""
+        namespace = arguments.get("namespace", self.default_namespace)
+        target_version = arguments.get("targetVersion", "")
+        openstack_version = arguments.get("openstackVersion", "")
+        
+        if not target_version:
+            return "Error: targetVersion is required"
+        
+        if not openstack_version:
+            return "Error: openstackVersion is required"
+        
+        # Build the patch JSON
+        patch_data = {
+            "spec": {
+                "openstackVersion": openstack_version,
+                "targetVersion": target_version
+            }
+        }
+        
+        patch_json = json.dumps(patch_data)
+        
+        # Execute oc patch command
+        patch_command = f'patch openstackcontrolplane --type=merge --patch=\'{patch_json}\''
+        result = self._run_oc_command(patch_command, namespace)
+        
+        if result['exitcode'] == 0:
+            return f"Successfully triggered minor update to version {target_version} in namespace {namespace}. Output: {result['stdout']}"
+        else:
+            return f"Error triggering update: {result['stderr']}"
+    
     def get_tool_definition(self, tool_name: str) -> Dict[str, Any]:
         """Get tool definition for MCP protocol"""
         tools = {
@@ -221,6 +252,28 @@ class OpenStackTools:
                     },
                     "required": []
                 }
+            },
+            "trigger_minor_update": {
+                "name": "trigger_minor_update",
+                "description": "Runs the openshift client (oc) to patch the control plane and trigger the openstack control plane minor update",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "namespace": {
+                            "type": "string",
+                            "description": "The namespace of the openstack control plane"
+                        },
+                        "targetVersion": {
+                            "type": "string",
+                            "description": "The targetVersion that we need to update to"
+                        },
+                        "openstackVersion": {
+                            "type": "string",
+                            "description": "The name of the openstackVersion CR to patch"
+                        }
+                    },
+                    "required": ["namespace", "targetVersion", "openstackVersion"]
+                }
             }
         }
         return tools.get(tool_name, {})
@@ -229,7 +282,7 @@ class OpenStackTools:
         """Get all available tools"""
         tool_names = [
             "hello", "oc", "get_openstack_control_plane", "check_openstack_svc",
-            "get_deployed_version", "get_available_version", "needs_minor_update"
+            "get_deployed_version", "get_available_version", "needs_minor_update", "trigger_minor_update"
         ]
         return [self.get_tool_definition(name) for name in tool_names]
     

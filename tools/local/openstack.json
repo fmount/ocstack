@@ -87,30 +87,5 @@
         "required": []
       }
     }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "trigger_minor_update",
-      "description": "Runs the openshift client (oc) to patch the control plane and trigger the openstack control plane minor update",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "namespace": {
-            "type": "string",
-            "description": "The namespace of the openstack control plane"
-          },
-          "targetVersion": {
-            "type": "string",
-            "description": "The targetVersion that we need to update to"
-          },
-          "openstackVersion": {
-            "type": "string",
-            "description": "The name of the openstackVersion CR to patch"
-          }
-        },
-        "required": ["namespace","targetVersion","openstackVersion"]
-      }
-    }
   }
 ]

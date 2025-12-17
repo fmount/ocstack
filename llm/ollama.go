@@ -186,22 +186,6 @@ func (c *OllamaProvider) GenerateChat(
 				case "get_available_version":
 					result = tools.GetAvailableVersion(f, ns)
 					f.Result = result
-				case "trigger_minor_update":
-					// Extract arguments manually since unpackArgs is not exported
-					namespace := ns // Use session namespace as default
-					targetVersion := ""
-					openstackVersion := ""
-					if val, exists := f.Arguments["namespace"].(string); exists && val != "" {
-						namespace = val // Only override if explicitly provided and not empty
-					}
-					if val, exists := f.Arguments["targetVersion"].(string); exists {
-						targetVersion = val
-					}
-					if val, exists := f.Arguments["openstackVersion"].(string); exists {
-						openstackVersion = val
-					}
-					result = tools.TriggerUpdate(f, namespace, openstackVersion, targetVersion)
-					f.Result = result
 				default:
 					result = fmt.Sprintf("Tool '%s' not found in MCP or local tools", f.Name)
 					f.Result = result
