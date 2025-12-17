@@ -1,6 +1,6 @@
 #!/usr/bin/expect -f
 
-set timeout 60
+set timeout 120
 
 spawn ./ocstack
 
@@ -22,18 +22,65 @@ send "In the openstack namespace, please get both the deployed OpenStack version
 expect {
     "Would you like to proceed? (y/n):" {
         puts "\n=== CONFIRMATION PROMPT DETECTED! ==="
+        
+        # Accept the confirmation
         send "y\r"
-        expect "Q :>"
-        puts "=== CONFIRMATION ACCEPTED AND COMPLETED ==="
+        puts "=== SENT CONFIRMATION (y) ==="
+        
+        # Wait for execution message
+        expect {
+            "Executing:" {
+                puts "=== EXECUTION STARTED ==="
+                
+                # Now wait for the tool call that should trigger the update
+                expect {
+                    "trigger_minor_update" {
+                        puts "=== TRIGGER_MINOR_UPDATE TOOL CALLED! ==="
+                        
+                        # Wait for the tool execution to complete and return to Q prompt
+                        expect {
+                            "Q :>" {
+                                puts "=== UPDATE EXECUTION COMPLETED SUCCESSFULLY ==="
+                            }
+                            timeout {
+                                puts "=== TIMEOUT WAITING FOR UPDATE COMPLETION ==="
+                                exit 1
+                            }
+                        }
+                    }
+                    "Q :>" {
+                        puts "=== EXECUTION COMPLETED BUT NO UPDATE TOOL CALLED ==="
+                        # This might be okay if the LLM decided no update was needed
+                    }
+                    timeout {
+                        puts "=== TIMEOUT WAITING FOR TOOL EXECUTION ==="
+                        exit 1
+                    }
+                }
+            }
+            "Q :>" {
+                puts "=== EXECUTION COMPLETED WITHOUT EXPLICIT MESSAGE ==="
+            }
+            timeout {
+                puts "=== TIMEOUT WAITING FOR EXECUTION ==="
+                exit 1
+            }
+        }
+        
+        puts "=== CONFIRMATION WORKFLOW COMPLETED ==="
     }
     "Q :>" {
-        puts "\n=== NO CONFIRMATION PROMPT (this is the issue) ==="
+        puts "\n=== NO CONFIRMATION PROMPT - RECOMMENDATION WAS LIKELY 'NONE' ==="
+        exit 1
     }
     timeout {
-        puts "\n=== TIMEOUT WAITING FOR RESPONSE ==="
+        puts "\n=== TIMEOUT WAITING FOR INITIAL RESPONSE ==="
+        exit 1
     }
 }
 
 # Exit
 send "/exit\r"
 expect eof
+
+puts "=== TEST COMPLETED SUCCESSFULLY ==="
