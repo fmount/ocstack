@@ -111,16 +111,25 @@ func (c *OllamaProvider) GenerateChat(
 		Tools:    t,
 	}
 
+	var lastLLMResponse string
+
 	respFunc := func(resp api.ChatResponse) error {
 		fmt.Printf("A :> ")
 		fmt.Println(resp.Message.Content)
 		fmt.Printf("T :> ")
 		fmt.Println(resp.Message.ToolCalls)
+
+		// Store LLM response for action detection
+		lastLLMResponse = resp.Message.Content
+
 		// Check if content is empty (e.g. it returned a ToolCall)
 		s.UpdateHistory(Message{
 			Role: "user",
 			Text: resp.Message.Content,
 		})
+
+		// Check for recommendations in LLM response (both direct and collective)
+		CheckForRecommendations(s, lastLLMResponse)
 
 		// Collect all tool results before processing them collectively
 		var toolResults []*tools.FunctionCall
@@ -179,11 +188,11 @@ func (c *OllamaProvider) GenerateChat(
 					f.Result = result
 				case "trigger_minor_update":
 					// Extract arguments manually since unpackArgs is not exported
-					namespace := ""
+					namespace := ns // Use session namespace as default
 					targetVersion := ""
 					openstackVersion := ""
-					if val, exists := f.Arguments["namespace"].(string); exists {
-						namespace = val
+					if val, exists := f.Arguments["namespace"].(string); exists && val != "" {
+						namespace = val // Only override if explicitly provided and not empty
 					}
 					if val, exists := f.Arguments["targetVersion"].(string); exists {
 						targetVersion = val
@@ -211,7 +220,9 @@ func (c *OllamaProvider) GenerateChat(
 		// Process all tool results collectively for agentic reasoning
 		if len(toolResults) > 0 {
 			collectivePrompt := tools.RenderCollectiveExec(toolResults)
+			s.ProcessingCollective = true
 			c.GenerateChat(ctx, collectivePrompt, s)
+			s.ProcessingCollective = false
 		}
 
 		return nil
@@ -221,6 +232,7 @@ func (c *OllamaProvider) GenerateChat(
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 

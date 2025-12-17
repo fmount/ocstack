@@ -16,7 +16,7 @@ send "/mcp connect http http://localhost:8080/mcp\r"
 expect "Q :>"
 
 # Send the query that should trigger confirmation
-send "Please get both the deployed OpenStack version and the available OpenStack version, then compare them and tell me if a minor update is possible and what the differences are between the versions. Provide detailed reasoning for your analysis.\r"
+send "In the openstack namespace, please get both the deployed OpenStack version and the available OpenStack version, then compare them and tell me if a minor update is possible and what the differences are between the versions. Provide detailed reasoning for your analysis.\r"
 
 # Wait for LLM response and potential confirmation prompt
 expect {

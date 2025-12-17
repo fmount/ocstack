@@ -20,6 +20,11 @@ const (
 	DEBUG = false // switch to true to print additional information
 )
 
+// handleConfirmation handles user confirmation for pending actions
+func handleConfirmation(input string, s *llm.Session, client llm.Client, ctx context.Context) {
+	s.HandleConfirmation(input, client, ctx)
+}
+
 // CliCommand -
 func CliCommand(q string, s *llm.Session) {
 	query := strings.ToLower(q)
@@ -103,7 +108,7 @@ func CliCommand(q string, s *llm.Session) {
 // MCP helper functions
 func connectMCP(s *llm.Session, serverType string, url string) {
 	fmt.Printf("Connecting to MCP server: %s...\n", serverType)
-	
+
 	var config mcp.MCPConfig
 	switch serverType {
 	case "filesystem":
@@ -138,21 +143,21 @@ func connectMCP(s *llm.Session, serverType string, url string) {
 		fmt.Println("Available types: filesystem, brave-search, sqlite, http, websocket")
 		return
 	}
-	
+
 	// Create MCP client
 	client := mcp.NewClient(config)
-	
+
 	// Connect
 	ctx := context.Background()
 	if err := client.Connect(ctx); err != nil {
 		fmt.Printf("Failed to connect to MCP server: %v\n", err)
 		return
 	}
-	
+
 	// Create MCP tool registry
 	registry := mcp.NewMCPToolRegistry()
 	registry.SetMCPClient(client)
-	
+
 	// Get local tools and add them to the registry
 	localTools, err := tools.RegisterTools()
 	if err != nil {
@@ -160,11 +165,11 @@ func connectMCP(s *llm.Session, serverType string, url string) {
 	} else {
 		registry.SetLocalTools(localTools)
 	}
-	
+
 	// Update session with combined tools (MCP tools take priority)
 	s.Tools = registry.GetAllTools()
 	s.SetMCPRegistry(registry)
-	
+
 	fmt.Printf("Successfully connected to MCP server: %s\n", serverType)
 }
 
@@ -189,22 +194,22 @@ func disconnectMCP(s *llm.Session) {
 func listMCPTools(s *llm.Session) {
 	if mcpRegistry := s.GetMCPRegistry(); mcpRegistry != nil {
 		fmt.Println("Available tools (MCP + local, MCP takes priority):")
-		
+
 		// Get all tools from the registry
 		allToolsData := mcpRegistry.GetAllTools()
-		
+
 		// Parse and display the tools
 		var tools []map[string]interface{}
 		if err := json.Unmarshal(allToolsData, &tools); err == nil {
 			fmt.Printf("Found %d tools:\n\n", len(tools))
-			
+
 			for i, tool := range tools {
 				if toolFunc, exists := tool["function"].(map[string]interface{}); exists {
 					name := toolFunc["name"]
 					description := toolFunc["description"]
 					fmt.Printf("%d. %s\n", i+1, name)
 					fmt.Printf("   Description: %s\n", description)
-					
+
 					if params, exists := toolFunc["parameters"].(map[string]interface{}); exists {
 						if props, exists := params["properties"].(map[string]interface{}); exists && len(props) > 0 {
 							fmt.Printf("   Parameters: ")
@@ -279,6 +284,12 @@ func main() {
 
 		// no input provided, go back to the beginning
 		if len(strings.TrimSuffix(input, "\n")) == 0 {
+			continue
+		}
+
+		// Check if we're waiting for confirmation
+		if s.State == llm.StateAwaitingConfirmation {
+			handleConfirmation(input, s, client, ctx)
 			continue
 		}
 

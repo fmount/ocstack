@@ -76,7 +76,7 @@ func renderTemplate(templatePath string, data any, embedErrors bool) (string, er
 		}
 		return "", fmt.Errorf("Error parsing template file: %v", err)
 	}
-	
+
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, data)
 	if err != nil {
@@ -88,7 +88,6 @@ func renderTemplate(templatePath string, data any, embedErrors bool) (string, er
 	return buf.String(), nil
 }
 
-
 // RenderCollectiveExec - Render multiple tool results for collective reasoning
 func RenderCollectiveExec(toolResults []*FunctionCall) string {
 	data := struct {
@@ -98,11 +97,10 @@ func RenderCollectiveExec(toolResults []*FunctionCall) string {
 		ToolResults: toolResults,
 		Count:       len(toolResults),
 	}
-	
+
 	result, _ := renderTemplate("template/resources/execResult.tmpl", data, true)
 	return result
 }
-
 
 // RegisterTools - A function that either select local tools or simply
 // discover what is available through and endpoint. Currently local tools

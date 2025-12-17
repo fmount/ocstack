@@ -15,7 +15,7 @@ Please analyze ALL the above tool results collectively and provide:
 
 3. **Evidence-Based Conclusion**: Based on the concrete evidence above, what is your definitive conclusion?
 
-4. **Actionable Recommendations**: What specific actions should be taken based on this analysis?
+4. **Evidence-Based Assessment**: What specific conclusions can be drawn from this analysis?
 
 ## Important Guidelines
 
@@ -25,3 +25,19 @@ Please analyze ALL the above tool results collectively and provide:
 - Do not make assumptions beyond what the data shows
 - If the data suggests an update is possible, clearly state: "Yes, you can perform an update from X to Y"
 - If the data shows no update is needed, clearly state: "No update is required"
+
+## Required Response Format
+
+End your analysis with a clear **Recommendations** section using this exact format:
+
+```
+## Recommendations
+
+[Either provide specific actionable recommendations, or write "None" if no action is needed]
+```
+
+### Guidelines for Recommendations:
+- **Actionable Items Only**: Only include recommendations that require user action or tool execution
+- **Specific Actions**: Be explicit about what should be done (e.g., "Update OpenStack from version X to Y", "Restart the failed pods", "Scale up the service")
+- **Clear Language**: Use direct, unambiguous language for recommendations
+- **None When Appropriate**: If the analysis shows everything is working correctly or no action is needed, write "None"
