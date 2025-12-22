@@ -16,6 +16,7 @@ type MCPRegistryInterface interface {
 const (
 	OLLAMAPROVIDER = "ollama"
 	LLAMACPP       = "llama"
+	GEMINI         = "gemini"
 )
 
 type Client interface {
@@ -51,6 +52,13 @@ func GetProvider(pID string) (Client, error) {
 		return client, err
 	case LLAMACPP:
 		var p LLamaCppProvider
+		client, err := p.GetLLMClient(context.Background())
+		if err != nil {
+			return nil, err
+		}
+		return client, err
+	case GEMINI:
+		var p GeminiProvider
 		client, err := p.GetLLMClient(context.Background())
 		if err != nil {
 			return nil, err

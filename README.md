@@ -216,6 +216,44 @@ In your `main.go`, update the provider selection to use `LLAMACPP`:
 $ export KUBECONFIG=$HOME/.crc/machines/crc/kubeconfig; make build && make run
 ```
 
+## Google Gemini Support
+
+**ocstack** includes support for Google's Gemini models via the official Google Generative AI Go SDK. This provider supports both chat interaction and full function/tool calling capabilities.
+
+### How to Use ocstack with Gemini
+
+#### **Export the API Key**
+
+Set the environment variable so `ocstack` can authenticate with Gemini:
+
+```bash
+export GEMINI_API_KEY=your_api_key_here
+```
+
+#### **Switch the LLM Provider to GEMINI**
+
+In your `main.go`, update the provider selection to use `GEMINI`:
+
+```diff
+- client, err := llm.GetProvider(llm.OLLAMAPROVIDER)
++ client, err := llm.GetProvider(llm.GEMINI)
+```
+
+> **Note:** This change is temporary as this is still a PoC without CLI configuration
+
+#### **Build and Run**
+
+```bash
+$ export KUBECONFIG=$HOME/.crc/machines/crc/kubeconfig; make build && make run
+```
+
+### Gemini Features
+
+- **Full Tool Support**: Unlike the LLAMACPP provider, Gemini supports complete function/tool calling
+- **MCP Integration**: Works seamlessly with MCP tools and local tools
+- **Advanced Reasoning**: Leverages Gemini 2.5 Flash model for intelligent responses
+- **Cloud-based**: No local model download required, but requires internet connection
+
 ## Available Makefile Targets
 
 OCStack provides convenient Makefile targets for building, running, and managing the MCP server:
