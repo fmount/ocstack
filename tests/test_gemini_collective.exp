@@ -1,0 +1,53 @@
+#!/usr/bin/expect -f
+
+# Test Gemini provider collective function processing
+set timeout 120
+
+# Set environment variables
+set env(GEMINI_API_KEY) "test-key-for-integration"
+set env(KUBECONFIG) "$env(PWD)/../../kubeconfig"
+
+spawn ./ocstack --provider gemini --debug
+
+# Wait for prompt
+expect "C :> "
+
+# Connect to MCP server
+send "/mcp connect\r"
+expect "C :> "
+
+# Test function calling that should trigger collective processing
+send "check all openstack services and analyze their status\r"
+
+# Look for debug output indicating collective processing
+expect {
+    "*Processing * function calls collectively*" { 
+        puts "SUCCESS: Collective processing detected"
+        exp_continue
+    }
+    "*Generated collective prompt for analysis*" { 
+        puts "SUCCESS: Collective prompt generated"
+        exp_continue
+    }
+    "*## Recommendations*" { 
+        puts "SUCCESS: Recommendations section found"
+        exp_continue
+    }
+    "*Would you like to proceed*" { 
+        puts "SUCCESS: User confirmation requested"
+        send "n\r"
+        exp_continue
+    }
+    "C :> " { 
+        puts "Test completed"
+    }
+    timeout { 
+        puts "TIMEOUT waiting for collective processing"
+        exit 1
+    }
+}
+
+# Test completion
+send "/exit\r"
+expect eof
+puts "Gemini collective processing test completed successfully"

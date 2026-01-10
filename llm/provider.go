@@ -126,8 +126,12 @@ func (s *Session) GetProfile() string {
 // UpdateHistory -
 func (s *Session) UpdateHistory(m Message) {
 	h := s.GetHistory().Text
+	fmt.Printf("[DEBUG HISTORY] - Current history length: %d\n", len(h))
+	fmt.Printf("[DEBUG HISTORY] - Adding message: Role='%s', Text='%v'\n", m.Role, m.Text)
 	h = append(h, m)
+	fmt.Printf("[DEBUG HISTORY] - New history length: %d\n", len(h))
 	s.SetHistory(History{h})
+	fmt.Printf("[DEBUG HISTORY] - History updated successfully\n")
 }
 
 func (s *Session) GetConfig() map[string]string {

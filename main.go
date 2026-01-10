@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	DEBUG = false // switch to true to print additional information
+	DEBUG = true // switch to true to print additional information
 )
 
 // handleConfirmation handles user confirmation for pending actions
@@ -158,13 +158,8 @@ func connectMCP(s *llm.Session, serverType string, url string) {
 	registry := mcp.NewMCPToolRegistry()
 	registry.SetMCPClient(client)
 
-	// Get local tools and add them to the registry
-	localTools, err := tools.RegisterTools()
-	if err != nil {
-		fmt.Printf("Warning: failed to load local tools: %v\n", err)
-	} else {
-		registry.SetLocalTools(localTools)
-	}
+	// Local tools disabled - only use MCP tools
+	fmt.Println("Note: Local tools disabled, only MCP tools will be available")
 
 	// Update session with combined tools (MCP tools take priority)
 	s.Tools = registry.GetAllTools()
@@ -176,16 +171,10 @@ func connectMCP(s *llm.Session, serverType string, url string) {
 func disconnectMCP(s *llm.Session) {
 	if mcpRegistry := s.GetMCPRegistry(); mcpRegistry != nil {
 		fmt.Println("Disconnecting MCP client...")
-		// Fall back to local tools only
-		localTools, err := tools.RegisterTools()
-		if err != nil {
-			fmt.Printf("Warning: failed to load local tools: %v\n", err)
-			s.Tools = []byte("[]") // No tools available
-		} else {
-			s.Tools = localTools
-		}
+		// No local tools fallback - no tools when MCP disconnected
+		s.Tools = []byte("[]") // No tools available
 		s.SetMCPRegistry(nil)
-		fmt.Println("Disconnected from MCP server - using local tools only")
+		fmt.Println("Disconnected from MCP server - no tools available (local tools disabled)")
 	} else {
 		fmt.Println("No MCP connection active")
 	}
@@ -193,25 +182,25 @@ func disconnectMCP(s *llm.Session) {
 
 func listMCPTools(s *llm.Session) {
 	if mcpRegistry := s.GetMCPRegistry(); mcpRegistry != nil {
-		fmt.Println("Available tools (MCP + local, MCP takes priority):")
+		fmt.Println("Available tools (MCP only):")
 
 		// Get all tools from the registry
 		allToolsData := mcpRegistry.GetAllTools()
 
 		// Parse and display the tools
-		var tools []map[string]interface{}
+		var tools []map[string]any
 		if err := json.Unmarshal(allToolsData, &tools); err == nil {
 			fmt.Printf("Found %d tools:\n\n", len(tools))
 
 			for i, tool := range tools {
-				if toolFunc, exists := tool["function"].(map[string]interface{}); exists {
+				if toolFunc, exists := tool["function"].(map[string]any); exists {
 					name := toolFunc["name"]
 					description := toolFunc["description"]
 					fmt.Printf("%d. %s\n", i+1, name)
 					fmt.Printf("   Description: %s\n", description)
 
-					if params, exists := toolFunc["parameters"].(map[string]interface{}); exists {
-						if props, exists := params["properties"].(map[string]interface{}); exists && len(props) > 0 {
+					if params, exists := toolFunc["parameters"].(map[string]any); exists {
+						if props, exists := params["properties"].(map[string]any); exists && len(props) > 0 {
 							fmt.Printf("   Parameters: ")
 							var paramNames []string
 							for paramName := range props {
@@ -228,7 +217,7 @@ func listMCPTools(s *llm.Session) {
 			fmt.Printf("Raw tools data: %s\n", string(allToolsData))
 		}
 	} else {
-		fmt.Println("No MCP connection active. Local tools only.")
+		fmt.Println("No MCP connection active. No tools available (local tools disabled).")
 		fmt.Println("Use '/mcp connect <server-type>' to connect to an MCP server")
 	}
 }
@@ -240,7 +229,7 @@ func main() {
 
 	ctx := context.Background()
 
-	client, err := llm.GetProvider(llm.OLLAMAPROVIDER)
+	client, err := llm.GetProvider(llm.GEMINI)
 	if err != nil {
 		panic(err)
 	}

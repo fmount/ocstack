@@ -1,0 +1,127 @@
+#!/usr/bin/expect -f
+
+# Test Gemini provider function execution and analysis
+# This test verifies that Gemini can:
+# 1. Execute MCP functions
+# 2. Analyze the results
+# 3. Provide recommendations
+
+set timeout 30
+
+# Check if GEMINI_API_KEY is set
+if {[info exists env(GEMINI_API_KEY)]} {
+    set env(GEMINI_API_KEY) $env(GEMINI_API_KEY)
+} else {
+    send_user "\n=== ERROR: GEMINI_API_KEY environment variable not set ===\n"
+    send_user "Please set: export GEMINI_API_KEY=your_api_key\n"
+    exit 1
+}
+
+set env(KUBECONFIG) "$env(PWD)/kubeconfig"
+
+# Start the application
+spawn make build
+expect eof
+
+spawn ./bin/ocstack
+
+# Wait for the application to start
+expect "Q :>" { send_user "\n=== Application started ===\n" }
+
+# Connect to MCP
+send "/mcp connect http http://localhost:8080/mcp\r"
+expect {
+    "Successfully connected to MCP server" {
+        send_user "\n=== MCP connected successfully ===\n"
+    }
+    timeout {
+        send_user "\n=== ERROR: MCP connection timeout ===\n"
+        exit 1
+    }
+}
+
+# Wait for prompt
+expect "Q :>"
+
+# Test function execution and analysis
+send "Can you check the deployed version of my control plane and see if there's an available version I can update to?\r"
+
+# Look for function execution
+expect {
+    "get_deployed_version" {
+        send_user "\n=== Function call: get_deployed_version detected ===\n"
+    }
+    timeout {
+        send_user "\n=== ERROR: No function call detected ===\n"
+        exit 1
+    }
+}
+
+# Look for second function execution
+expect {
+    "get_available_version" {
+        send_user "\n=== Function call: get_available_version detected ===\n"
+    }
+    timeout {
+        send_user "\n=== ERROR: Second function call not detected ===\n"
+        exit 1
+    }
+}
+
+# Look for Gemini's analysis (not just "I executed the function")
+expect {
+    "A :>" {
+        send_user "\n=== Gemini analysis started ===\n"
+        
+        # Read the response and check it's not just the placeholder
+        expect {
+            -re "I executed.*function" {
+                send_user "\n=== ERROR: Got placeholder response instead of analysis ===\n"
+                exit 1
+            }
+            -re "(version|update|deploy|control.*plane|recommend)" {
+                send_user "\n=== SUCCESS: Got intelligent analysis with version/update content ===\n"
+            }
+            timeout {
+                send_user "\n=== ERROR: Timeout waiting for analysis ===\n"
+                exit 1
+            }
+        }
+    }
+    timeout {
+        send_user "\n=== ERROR: No Gemini response detected ===\n"
+        exit 1
+    }
+}
+
+# Wait for next prompt to ensure conversation continues
+expect {
+    "Q :>" {
+        send_user "\n=== SUCCESS: Conversation continues after function analysis ===\n"
+    }
+    timeout {
+        send_user "\n=== ERROR: Conversation flow broken ===\n"
+        exit 1
+    }
+}
+
+# Test conversation continuation
+send "Thank you\r"
+expect {
+    "A :>" {
+        send_user "\n=== SUCCESS: Follow-up conversation works ===\n"
+    }
+    timeout {
+        send_user "\n=== ERROR: Follow-up conversation failed ===\n"
+        exit 1
+    }
+}
+
+expect "Q :>"
+
+# Exit
+send "/exit\r"
+expect eof
+
+send_user "\n=== ALL TESTS PASSED ===\n"
+exit 0

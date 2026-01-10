@@ -1,0 +1,141 @@
+#!/usr/bin/expect -f
+
+# Test Gemini provider recommendations and user confirmation
+# This test verifies that Gemini can:
+# 1. Execute functions to get data
+# 2. Provide structured recommendations 
+# 3. Ask for user confirmation
+# 4. Process user feedback
+
+set timeout 30
+
+# Check if GEMINI_API_KEY is set
+if {[info exists env(GEMINI_API_KEY)]} {
+    set env(GEMINI_API_KEY) $env(GEMINI_API_KEY)
+} else {
+    send_user "\n=== ERROR: GEMINI_API_KEY environment variable not set ===\n"
+    send_user "Please set: export GEMINI_API_KEY=your_api_key\n"
+    exit 1
+}
+
+set env(KUBECONFIG) "$env(PWD)/kubeconfig"
+
+# Start the application
+spawn make build
+expect eof
+
+spawn ./bin/ocstack
+
+# Wait for the application to start
+expect "Q :>" { send_user "\n=== Application started ===\n" }
+
+# Connect to MCP
+send "/mcp connect http http://localhost:8080/mcp\r"
+expect {
+    "Successfully connected to MCP server" {
+        send_user "\n=== MCP connected successfully ===\n"
+    }
+    timeout {
+        send_user "\n=== ERROR: MCP connection timeout ===\n"
+        exit 1
+    }
+}
+
+# Wait for prompt
+expect "Q :>"
+
+# Ask a question that should trigger recommendations
+send "Check my OpenStack deployment status and provide recommendations for any issues or improvements. Please format your response with a ## Recommendations section.\r"
+
+# Look for function execution
+expect {
+    "get_openstack_control_plane" {
+        send_user "\n=== Function call detected ===\n"
+    }
+    timeout {
+        send_user "\n=== ERROR: No function call detected ===\n"
+        exit 1
+    }
+}
+
+# Look for Gemini's response with recommendations section
+expect {
+    "A :>" {
+        send_user "\n=== Gemini response started ===\n"
+        
+        # Look for recommendations section
+        expect {
+            -re "## Recommendations" {
+                send_user "\n=== SUCCESS: Found recommendations section ===\n"
+                
+                # Check if recommendation detection triggered confirmation
+                expect {
+                    "Recommended Action:" {
+                        send_user "\n=== SUCCESS: Recommendation detected, asking for confirmation ===\n"
+                        expect {
+                            "Would you like to proceed? (y/n):" {
+                                send_user "\n=== SUCCESS: Confirmation prompt displayed ===\n"
+                                
+                                # Test user acceptance
+                                send "y\r"
+                                expect {
+                                    "A :>" {
+                                        send_user "\n=== SUCCESS: Action confirmed and executed ===\n"
+                                    }
+                                    timeout {
+                                        send_user "\n=== ERROR: No response after confirmation ===\n"
+                                        exit 1
+                                    }
+                                }
+                            }
+                            timeout {
+                                send_user "\n=== ERROR: No confirmation prompt ===\n"
+                                exit 1
+                            }
+                        }
+                    }
+                    "Q :>" {
+                        send_user "\n=== NOTE: No actionable recommendation triggered ===\n"
+                    }
+                    timeout {
+                        send_user "\n=== ERROR: Timeout waiting for recommendation or prompt ===\n"
+                        exit 1
+                    }
+                }
+            }
+            "Q :>" {
+                send_user "\n=== WARNING: No recommendations section found ===\n"
+            }
+            timeout {
+                send_user "\n=== ERROR: Timeout waiting for recommendations ===\n"
+                exit 1
+            }
+        }
+    }
+    timeout {
+        send_user "\n=== ERROR: No Gemini response detected ===\n"
+        exit 1
+    }
+}
+
+# Test follow-up conversation
+expect "Q :>"
+send "Thank you\r"
+expect {
+    "A :>" {
+        send_user "\n=== SUCCESS: Follow-up conversation works ===\n"
+    }
+    timeout {
+        send_user "\n=== ERROR: Follow-up conversation failed ===\n"
+        exit 1
+    }
+}
+
+expect "Q :>"
+
+# Exit
+send "/exit\r"
+expect eof
+
+send_user "\n=== RECOMMENDATION TEST COMPLETED ===\n"
+exit 0

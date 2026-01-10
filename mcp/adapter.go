@@ -48,7 +48,7 @@ type FunctionCall struct {
 }
 
 // ExecuteMCPTool executes an MCP tool and returns the result in the expected format
-func (a *ToolAdapter) ExecuteMCPTool(f interface{}) string {
+func (a *ToolAdapter) ExecuteMCPTool(f any) string {
 	var functionCall *FunctionCall
 	
 	// Handle both mcp.FunctionCall and tools.FunctionCall types
@@ -201,19 +201,6 @@ func (r *MCPToolRegistry) GetAllTools() []byte {
 		}
 	}
 
-	// Add local tools only if they don't conflict with MCP tools
-	if r.localTools != nil {
-		var localToolsList []Tool
-		if err := json.Unmarshal(r.localTools, &localToolsList); err == nil {
-			for _, tool := range localToolsList {
-				// Only add local tool if MCP doesn't have a tool with the same name
-				if tool.Function != nil && !mcpToolNames[tool.Function.Name] {
-					allTools = append(allTools, tool)
-				}
-			}
-		}
-	}
-
 	result, err := json.Marshal(allTools)
 	if err != nil {
 		fmt.Printf("Error marshaling combined tools: %v\n", err)
@@ -225,19 +212,29 @@ func (r *MCPToolRegistry) GetAllTools() []byte {
 
 // IsToolFromMCP checks if a tool name comes from MCP
 func (r *MCPToolRegistry) IsToolFromMCP(toolName string) bool {
-	if !r.mcpEnabled || r.mcpClient == nil || !r.mcpClient.IsConnected() {
+	
+	if !r.mcpEnabled || r.mcpClient == nil {
+		return false
+	}
+	
+	if !r.mcpClient.IsConnected() {
 		return false
 	}
 
-	// Check if tool exists in MCP tools
-	mcpToolsData := r.mcpClient.GetAvailableTools()
-	var mcpTools []Tool
-	if err := json.Unmarshal(mcpToolsData, &mcpTools); err != nil {
+	// The GetAvailableTools() method seems to be broken, so let's use a different approach
+	// If MCP is enabled and connected, and we can see tools via /mcp tools, then assume
+	// any tool request should go to MCP first since that's the intended behavior
+	
+	// Try to call ListTools directly on the client to see if the tool exists
+	ctx := context.Background()
+	tools, err := r.mcpClient.ListTools(ctx)
+	if err != nil {
+		fmt.Printf("[WARN] - Error listing MCP tools: %v\n", err)
 		return false
 	}
-
-	for _, tool := range mcpTools {
-		if tool.Function != nil && tool.Function.Name == toolName {
+	
+	for _, tool := range tools {
+		if tool.Name == toolName {
 			return true
 		}
 	}
