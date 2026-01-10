@@ -101,27 +101,6 @@ $ export KUBECONFIG=$HOME/.crc/machines/crc/kubeconfig; make build && make run
 
 > **Note:** You can point to **any OpenShift environment** by updating the `KUBECONFIG` path to your desired cluster configuration.
 
-## Working with Tools
-
-OCStack now supports **MCP (Model Context Protocol) tools only**. Local tool execution has been removed in favor of a cleaner, more standardized approach using MCP servers.
-
-The tool system is designed to be extensible through MCP servers, allowing you to create specialized tools for specific tasks. You must connect to an MCP server to access tools.
-
-### Adding Custom Tools
-
-To add new tools, you need to create or extend an MCP server. See the [MCP Server Integration](#mcp-server-integration) section for details on how to:
-
-1. **Extend the existing OpenStack MCP server** - Add new tools to `examples/openstack-mcp-server/server.py`
-2. **Create a new MCP server** - Follow the MCP specification to create specialized tool servers
-3. **Use third-party MCP servers** - Connect to existing MCP servers from the community
-
-### Tool Organization
-
-- **MCP Tools:** All tools are now provided by MCP servers
-- **No Local Tools:** Local tool execution has been completely removed
-- **Extensibility:** Create new tools by extending MCP servers or creating new ones
-- **Integration:** Tools are automatically discovered when connecting to MCP servers
-
 
 ## Ramalama Support (LLama.cpp via HTTP)
 

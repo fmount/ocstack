@@ -159,34 +159,13 @@ func (c *OllamaProvider) GenerateChat(
 				// Execute MCP tool (preferred)
 				result = mcpRegistry.ExecuteMCPTool(f)
 				f.Result = result
+			} else if mcpRegistry == nil {
+				result = fmt.Sprintf("MCP not connected. Use '/mcp connect' to enable tools.")
+				f.Result = result
 			} else {
-				// Fall back to local tools if MCP doesn't have this tool
-				switch f.Name {
-				case "hello":
-					result = tools.Hello(f.Arguments)
-					f.Result = result
-				case "oc":
-					result = tools.OC(f)
-					f.Result = result
-				case "get_openstack_control_plane":
-					result = tools.Ctlplane(f, ns)
-					f.Result = result
-				case "check_openstack_svc":
-					result = tools.CheckSvc(f, ns)
-					f.Result = result
-				case "needs_minor_update":
-					result = tools.MinorUpdate(f, ns)
-					f.Result = result
-				case "get_deployed_version":
-					result = tools.GetDeployedVersion(f, ns)
-					f.Result = result
-				case "get_available_version":
-					result = tools.GetAvailableVersion(f, ns)
-					f.Result = result
-				default:
-					result = fmt.Sprintf("Tool '%s' not found in MCP or local tools", f.Name)
-					f.Result = result
-				}
+				// Tool not available in MCP
+				result = fmt.Sprintf("Tool '%s' not available in MCP. Available tools can be seen with '/mcp tools'", f.Name)
+				f.Result = result
 			}
 
 			if s.Debug {
