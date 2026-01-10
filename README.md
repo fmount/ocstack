@@ -101,68 +101,26 @@ $ export KUBECONFIG=$HOME/.crc/machines/crc/kubeconfig; make build && make run
 
 > **Note:** You can point to **any OpenShift environment** by updating the `KUBECONFIG` path to your desired cluster configuration.
 
-## Working with Local Tools
+## Working with Tools
 
-OCStack currently supports only local tool execution. Support for connecting to
-MCP (Model Context Protocol) endpoints is planned for a future release.
+OCStack now supports **MCP (Model Context Protocol) tools only**. Local tool execution has been removed in favor of a cleaner, more standardized approach using MCP servers.
 
-The tool system is designed to be extensible, allowing you to create
-specialized tools for specific tasks. Currently, a basic set of tools is
-provided, but you can easily add custom tools to enhance functionality.
+The tool system is designed to be extensible through MCP servers, allowing you to create specialized tools for specific tasks. You must connect to an MCP server to access tools.
 
 ### Adding Custom Tools
 
-To add a new tool, follow these three steps:
+To add new tools, you need to create or extend an MCP server. See the [MCP Server Integration](#mcp-server-integration) section for details on how to:
 
-#### 1. Define the Tool Schema
-
-Create a JSON definition file in the `tools/local` directory. Use descriptive
-names that reflect the tool's purpose.
-
-**Example:** For OpenStack-specific tools, create `tools/local/openstack.json`:
-
-```json
-[
-  {
-    "type": "function",
-    "function": {
-      "name": "get_endpoint_list",
-      "description": "Get the OpenStack endpoint list",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "namespace": {
-            "type": "string",
-            "description": "The namespace where the OpenStack client is deployed"
-          }
-        },
-        "required": ["namespace"]
-      }
-    }
-  }
-]
-```
-
-> Tool definitions from custom files are automatically merged with the
-default `tools.json`, making them available to the LLM.
-
-#### 2. Implement the Tool Logic
-
-Add your tool's implementation to the `tools/utils.go` module. This is where
-you define the actual functions that will be executed when the LLM calls your
-tool.
-
-#### 3. Register the Tool Handler
-
-Update the `GenerateChat` function to handle calls to your new tool. This
-connects the LLM's tool invocation to your implementation.
+1. **Extend the existing OpenStack MCP server** - Add new tools to `examples/openstack-mcp-server/server.py`
+2. **Create a new MCP server** - Follow the MCP specification to create specialized tool servers
+3. **Use third-party MCP servers** - Connect to existing MCP servers from the community
 
 ### Tool Organization
 
-- **Default tools:** Defined in the base `tools.json` file
-- **Custom tools:** Organized by category in `tools/local/` (e.g., `openstack.json`, `kubernetes.json`)
-- **Implementation:** All tool logic resides in `tools/utils.go`
-- **Integration:** Tool handlers are registered in the `GenerateChat` function
+- **MCP Tools:** All tools are now provided by MCP servers
+- **No Local Tools:** Local tool execution has been completely removed
+- **Extensibility:** Create new tools by extending MCP servers or creating new ones
+- **Integration:** Tools are automatically discovered when connecting to MCP servers
 
 
 ## Ramalama Support (LLama.cpp via HTTP)
@@ -173,7 +131,7 @@ using LLama.cpp-compatible APIs. This allows the assistant to run fully offline
 and self-hosted, which is ideal for development or to conduct experiments.
 
 > **Note:** While chat interaction works, **function/tool calling is not yet
-> supported** with the `LLAMACPP` provider in ocstack.
+> supported** with the `LLAMACPP` provider in ocstack. To use tools, connect to an MCP server, but the LlamaCpp provider currently cannot invoke them.
 
 ### How to Use ocstack with Ramalama
 
@@ -250,9 +208,10 @@ $ export KUBECONFIG=$HOME/.crc/machines/crc/kubeconfig; make build && make run
 ### Gemini Features
 
 - **Full Tool Support**: Unlike the LLAMACPP provider, Gemini supports complete function/tool calling
-- **MCP Integration**: Works seamlessly with MCP tools and local tools
-- **Advanced Reasoning**: Leverages Gemini 2.5 Flash model for intelligent responses
+- **MCP Integration**: Works seamlessly with MCP tools (local tools have been removed)
+- **Advanced Reasoning**: Leverages Gemini 2.5 Flash model for intelligent responses and recommendations
 - **Cloud-based**: No local model download required, but requires internet connection
+- **Collective Processing**: Processes multiple tool calls together for comprehensive analysis
 
 ## Available Makefile Targets
 

@@ -4,16 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"text/template"
 )
 
-const (
-	LOCAL_TOOLS = "tools/local"
-)
+// LOCAL_TOOLS constant removed - no longer using local tools
 
 type Tool struct {
 	Type     string    `json:"type"`
@@ -102,64 +98,28 @@ func RenderCollectiveExec(toolResults []*FunctionCall) string {
 	return result
 }
 
-// RegisterTools - A function that either select local tools or simply
-// discover what is available through and endpoint. Currently local tools
-// only are supported
+// GetRegisteredTools - Legacy function, no longer used (MCP-only approach)
+// Kept for backwards compatibility but returns empty tools array
 func GetRegisteredTools(dirPath string) ([]byte, error) {
-
-	var allTools []map[string]any
-	// Read all JSON files from the directory
-	err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// Skip directories and non-JSON files
-		if info.IsDir() || !strings.HasSuffix(strings.ToLower(info.Name()), ".json") {
-			return nil
-		}
-
-		// Read the JSON file
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return fmt.Errorf("failed to read file %s: %w", path, err)
-		}
-
-		// Parse the JSON
-		var tools []map[string]any
-		if err := json.Unmarshal(data, &tools); err != nil {
-			return fmt.Errorf("failed to parse JSON from %s: %w", path, err)
-		}
-
-		// Merge into the main slice
-		allTools = append(allTools, tools...)
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	// Marshal the merged tools back to JSON
-	return json.Marshal(allTools)
+	// Return empty tools array - local tools no longer supported
+	return json.Marshal([]map[string]any{})
 }
 
-// RegisterTools - A function that either select local tools or simply
-// discover what is available through and endpoint. Currently local tools
-// only are supported
+// RegisterTools - Legacy function, no longer used (MCP-only approach)  
+// Kept for backwards compatibility but returns empty tools array
 func RegisterTools() ([]byte, error) {
-	// Read the JSON files from local dir
-	return GetRegisteredTools(LOCAL_TOOLS)
+	// Return empty tools array - local tools no longer supported
+	return json.Marshal([]map[string]any{})
 }
 
-// RegisterToolsWithMCP - Extended version that supports MCP tools alongside local tools
+// RegisterToolsWithMCP - MCP-only tool registration
 func RegisterToolsWithMCP(mcpRegistry interface{}) ([]byte, error) {
 	// If mcpRegistry implements GetAllTools method, use it
 	if registry, ok := mcpRegistry.(interface{ GetAllTools() []byte }); ok {
 		return registry.GetAllTools(), nil
 	}
-	// Fallback to local tools only
-	return RegisterTools()
+	// No fallback - return empty tools if no MCP registry available
+	return json.Marshal([]map[string]any{})
 }
 
 // ToolResult -

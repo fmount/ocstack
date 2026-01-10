@@ -235,11 +235,8 @@ func main() {
 	}
 
 	h := llm.History{}
-	// Register local tools - these will be available alongside MCP tools
-	b, err := tools.RegisterTools()
-	if err != nil {
-		panic(err)
-	}
+	// No local tools - MCP-only approach
+	b := []byte("[]") // Empty tools array
 
 	profile, err := t.LoadProfile("default")
 	if err != nil {
